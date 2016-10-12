@@ -1,0 +1,3 @@
+# m h  dom mon dow   command
+* * * * * /usr/local/bin/_index.sh
+0 5 * * * touch /tmp/_sphinx_reindex_flag

@@ -1,0 +1,109 @@
+body {
+  margin: 0px 0px 0px 0px;
+}
+
+table{
+border:0px;
+border-collapse:collapse;
+border-spacing: 10 10;
+}
+
+table td{
+padding: 0px;
+} 
+
+
+
+td.mode {
+  background-color: #CCCCCC;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
+
+td.modeselected {
+  background-color: #888888;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
+
+td.item {
+  background-color: #F0F0F0;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
+
+td.header {
+  background-color: #CCCCCC;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
+
+td.planka {
+  background-color: #CCCCFF;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
+
+a.planka {
+  text-decoration:  none;
+  background-color: #CCCCFF;
+}
+
+a.planka_selected {
+  text-decoration:  none;
+  background-color: #888888;
+}
+
+
+p.itemlist {
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  color: #000000;
+  background-color: #CCCCCC;
+  font-family: arial, sans-serif;
+  margin-top: 1px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+}
+
+a.itemlist {
+  text-decoration:  none;
+  color: #000000;
+}
+
+p.selected {
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  color: #000000;
+  background-color: #888888;
+  font-family: arial, sans-serif;
+  margin-top: 1px;
+  margin-right: 0px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+}
+
+td.itemlist {
+  background-color: #EEEEEE;
+}
+
+td.item {
+  background-color: #F0F0F0;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1px solid white;
+}
