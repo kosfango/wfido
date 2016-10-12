@@ -1,3 +1,3 @@
 # WFIDO
-# Fidonet node web interface
+# Fidonet node web interface by Max Lushnikov
 
