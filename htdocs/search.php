@@ -99,7 +99,6 @@ if ($string){
     }
   }
 
-//print $search_string;
   $result = $search->Query( mb_convert_encoding($search_string, 'UTF-8', 'KOI8-R'), "messages delta");
   if ( !empty($result["matches"]) ) { 
     print "Найдено ".$result['total_found']." результатов<br>\n";
