@@ -160,7 +160,7 @@ if ($mode=="areas"){
 <table width=100%>
  <tr><td class=header>user info</td><td class=header>groups</td></tr>\n";
   $result=mysql_query("select point,name,email,active from users order by point;");
-  while ($row = mysql_fetch_object($result)){
+    while ($row = mysql_fetch_object($result)){
     if ($row->active) {
       $active="<font color=green>active</font>";
     } else {
@@ -359,7 +359,7 @@ if ($mode=="areas"){
 } else {
   $hash=substr($_GET["message"],0,128);
   if ($_GET["action"]=="approve"){
-    mysql_query("update `outbox` set approve='1' where hash='$hash';");
+    mysql_query("update `outbox` set aprove='1' where hash='$hash';");
   } elseif ($_GET["action"]=="reject") {
       $result=mysql_query("select * from `outbox` where hash='$hash';");
       $row=mysql_fetch_object($result);
@@ -376,13 +376,13 @@ FROM: $row->fromname($row->fromaddr)
 TO:   $row->toname($row->toaddr)
 =======================================
 $row->text
-', fromaddr='$mynode', toaddr='$row->fromaddr', origin='Bad robot', reply='', date=now(), hash='".md5(rand())."', sent='0', approve='1';");
+', fromaddr='$mynode', toaddr='$row->fromaddr', origin='Bad robot', reply='', date=now(), hash='".md5(rand())."', sent='0', aprove='1';");
 
       mysql_query("update `outbox` set sent='1' where hash='$hash';");
   } elseif ($_GET["action"]=="drop") {
       mysql_query("update `outbox` set sent='1' where hash='$hash';");
   }  
-  $result=mysql_query("select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='0' and outbox.approve='0';");
+  $result=mysql_query("select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='0' and outbox.aprove='0';");
 
   if (mysql_num_rows($result)) {
     print "<table width=\"100%\" height=\"100%\">
