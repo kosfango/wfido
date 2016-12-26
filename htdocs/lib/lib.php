@@ -237,7 +237,7 @@ function message2html($text){
     return $return;
 }
 
-function message2textarea ($text){
+function message2textarea ($text, $reply_to_name){
     $return="";
     foreach($text as $string){
       if (substr($string,0,1)!="@" and  (substr($string,0,5)!="AREA:" or $body_flag)){
@@ -245,7 +245,7 @@ function message2textarea ($text){
             break;
         } elseif  (strtoupper(substr($string,0,3))!="..." and strtoupper(substr($string,0,3))!="---"){
             $string=trim($string);
-	    if ($string) {
+            if ($string) {
               $first_space=strpos($string," ");
               if (substr($string,$first_space-1,1)==">") {
                 $first_quote=strpos($string,">");
@@ -256,11 +256,16 @@ function message2textarea ($text){
               } else {
                 $string=str_replace ("<", "&lt;",$string);
                 $string=str_replace (">", "&gt;",$string);
-                $return=$return. " $quoute_string&gt; ".$string."\n";
+//                $return=$return. " $quoute_string&gt; ".$string."\n";
+
+                $first = substr($reply_to_name[0], 0, 1);
+                $second = substr($reply_to_name[1], 0, 1);
+                $return=$return. " $first$second&gt; ".$string."\n";
+
               }
             } else {
-	      $return=$return. "\n";
-	    }
+              $return=$return. "\n";
+            }
         }
       }
     $body_flag=1;

@@ -29,10 +29,14 @@ if ($_GET["logout"]) {
 }
 
 
+
+
 if ($_GET["login"]) {
     login($_POST["login"],$_POST["password"],$_POST["remember"]);
     exit;
-}else{
+}
+{
+    //var_dump($_COOKIE);
     $point=check_session($_COOKIE['SESSION']);
 }
 
@@ -59,16 +63,16 @@ if ($mode=="ansver" and $toname and ($area!="NETMAIL" or $toaddr)){
 //пихаем сообщение в базу, в таблицу outbox.
     if ($permission=="3") { //полный доступ
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
+      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1';");
     } elseif ($permission=="2") { //доступ с премодерацией
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
+      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0';");
     } elseif ($permission=="4") { //доступ через антиспам
       $hash=md5(rand());
       if (antispam($subject, $text)) { // возможно, спам. отправляем на премодерацию.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
+        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0';");
       } else { // не спам. отправляем в эху.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
+        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1';");
       }
     } else { // если права 1 или 0, значит прав на запись нет.
       mysql_query("
@@ -85,7 +89,7 @@ TO:   $toname($toaddr)
 =======================================
 $text
 * Origin: $myorigin
-', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', approve='1';");
+', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', aprove='1';");
     }
     header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: ?area='.$area."&message=".$hash);
@@ -94,6 +98,9 @@ exit;
   mysql_query("insert ignore into `favorites` set point='$point', message='$hash', uniq_index='$point-$hash';");
 } elseif ($mode=="remove_from_favorites"){
   mysql_query("delete from `favorites` where point='$point' and message='$hash';");
+}
+  if ($mode=="delete"){
+  mysql_query("delete from `messages` where `hash` = '$hash';");
 }
 
 
@@ -195,10 +202,11 @@ if (mysql_num_rows($result)) {
         $newmessages="";
       }
     }
+    $area_url = urlencode($row->area);
     if ($mode=="thread" or $mode=="tree"){
-      print "<p onClick=\"document.location='?area=$row->area&mode=thread';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$row->area&mode=thread\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
+    print "<p onClick=\"document.location='?area=$area_url&mode=thread';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$area_url&mode=thread\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
     } else {
-      print "<p onClick=\"document.location='?area=$row->area';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$row->area\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
+    print "<p onClick=\"document.location='?area=$area_url';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$area_url\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
     }
   }
 }
@@ -375,10 +383,11 @@ $header_text
       //карбоним в нее сообщения
       mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
-                               from `messages` where toname='$myname' and area!=''");
+                               from `messages` where toname='$myname' and area!='NETMAIL' and area!=''");
       mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
-                               from `messages` where fromname='$myname' and area!=''");
+                               from `messages` where fromname='$myname' and area!='NETMAIL' and area!=''");
+
       $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `tmp` order by rec desc";
 
     } elseif ($area=="OUTBOX") {
@@ -462,14 +471,16 @@ $header_text
 <td class=\"$class\">$row->date</td>
 </tr>\n";
         } else {
-          print "
-<tr onClick=\"document.location='?area=$row->area&message=$row->hash';return false\" style=\"cursor: pointer;\" $element_id>
-<td class=\"$class\">$row->fromname</td>
-<td class=\"$class\">$row->toname</td>
-<td class=\"$class\"><a href=\"?area=$row->area&message=$row->hash\">".txt2html($row->subject)."</a></td>
-<td class=\"$class\">$row->date</td>
-</tr>\n";
-        }
+    $area_url = urlencode($row->area);
+
+              print "
+              <tr onClick=\"document.location='?area=$area_url&message=$row->hash';return false\" style=\"cursor: pointer;\" $element_id>
+              <td class=\"$class\">$row->fromname</td>
+              <td class=\"$class\">$row->toname</td>
+              <td class=\"$class\"><a href=\"?area=$area_url&message=$row->hash\">".txt2html($row->subject)."</a></td>
+              <td class=\"$class\">$row->date</td>
+              </tr>\n";
+          }
       }
       print "</table>\n";
     }else{
@@ -499,8 +510,9 @@ $header_text
 
 // Рисуем тело письма
 
-print "<tr height=80%><td valign=top>
-<div style='width: 100%; height: 100%; word-break: break-all; overflow: auto; background-color: \"#FFFFFF\"'>\n";
+
+  print "<tr height=80%><td valign=top>
+  <div style='width: 100%; height: 100%; min-height:150px; word-break: break-all; overflow: scroll; background-color: \"#FFFFFF\"'>\n";
 
     if ($area=="OUTBOX"){
       $query="select * from `outbox` where hash='$hash' and fromaddr='$myaddr' and sent='0';";
@@ -533,6 +545,9 @@ print "<tr height=80%><td valign=top>
         } else {
           print "<a href=\"?area=FAVORITES&message=$row->hash&mode=remove_from_favorites\"><img src=\"images/delete_from_favorites.gif\" alt=\" delete from favorites\" title=\"delete from favorites\"  width=16 height=16 border=0></a> ";
         }
+          if ($area=="NETMAIL"){
+          print "<a href=\"?area=".rawurlencode($row->area)."&message=$row->hash&mode=delete\">delete</a>";
+        }
       }
       print "</td></tr>\n</table>\n";
   
@@ -547,7 +562,7 @@ print "<tr height=80%><td valign=top>
         }
         print "<table width=100% height=90%><tr height=90%><td><form method=post action=\"?area=$row->area&message=$row->hash&mode=ansver\" style=\"width: 100%; height: 100%;\">\n<textarea name=text style=\"width: 100%; height: 100%;\">\n";
         print "Hello, $reply_to_name[0]!\n\n";
-        print message2textarea($text);         
+        print message2textarea($text, $reply_to_name);
         print "\nС наилучшими пожеланиями, $myname.\n</textarea></td></tr>\n<tr height=10%><td>Subject: <input type=text name=subject value=\"$row->subject\">\nTo:<input type=text name=toname value=\"$row->fromname\">";
         if ($area=="NETMAIL"){
   	print "<input type=text name=\"toaddr\" value=\"$row->fromaddr\">";
