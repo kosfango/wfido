@@ -60,11 +60,14 @@ global $_GET,$_POST,$_COOKIE;
 
 function check_session($sessionid) {
 global $area,$hash,$webroot;
+// echo __FUNCTION__;echo "<pre>";var_dump($_SERVER);exit;
+
     $browser=md5($_SERVER["HTTP_USER_AGENT"]
 //		. $_SERVER["HTTP_ACCEPT"]
-    		. $_SERVER["HTTP_ACCEPT_LANGUAGE"]
-    		. $_SERVER["HTTP_ACCEPT_ENCODING"]
-		. $_SERVER["HTTP_ACCEPT_CHARSET"] );
+//    		. $_SERVER["HTTP_ACCEPT_LANGUAGE"]
+//    		. $_SERVER["HTTP_ACCEPT_ENCODING"]
+//		. $_SERVER["HTTP_ACCEPT_CHARSET"]
+	);
     $result=mysql_query("SELECT point FROM `sessions` WHERE `sessionid`='$sessionid' and `browser`='$browser' and `active`=1");
 
     if (mysql_num_rows($result)==1) {
@@ -77,10 +80,15 @@ global $area,$hash,$webroot;
     }
 }
 
+
 function login($point,$password,$remember){
 global $sessionid,$mynode,$area,$hash,$webroot;
+
   if ($point or $password) {
 	if ($point and $password and check_password($point,$password)) {
+	
+	    if(!session_id()) session_start();
+	    
 	    if ($_COOKIE['SESSION']) {
 		$sessionid=$_COOKIE['SESSION'];
 	    } else {
@@ -92,11 +100,15 @@ global $sessionid,$mynode,$area,$hash,$webroot;
 		$expire=0;
 	    }
 	    setcookie('SESSION',$sessionid, $expire);
+
+	    
 	    $browser=md5($_SERVER["HTTP_USER_AGENT"]
 //			    . $_SERVER["HTTP_ACCEPT"]
-			    . $_SERVER["HTTP_ACCEPT_LANGUAGE"]
-			    . $_SERVER["HTTP_ACCEPT_ENCODING"]
-			    . $_SERVER["HTTP_ACCEPT_CHARSET"] );
+//			    . $_SERVER["HTTP_ACCEPT_LANGUAGE"]
+//			    . $_SERVER["HTTP_ACCEPT_ENCODING"]
+//			    . $_SERVER["HTTP_ACCEPT_CHARSET"] 
+			    );
+			
     	    $ip=$_SERVER["REMOTE_ADDR"];
 	    $row=mysql_fetch_object(mysql_query("select `close_old_session` from `users` where `point`='$point'"));
 	    if ($row->close_old_session) {
@@ -105,6 +117,7 @@ global $sessionid,$mynode,$area,$hash,$webroot;
     	    mysql_query ("INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
 	    header ('HTTP/1.1 301 Moved Permanently');
     	    header ('Location: '.$webroot.'/?area='.urlencode($area).'&message='.$hash);
+    	    exit;
 	} else {
 	    $error="<font color=red>Пароль не верен или учетная запись не активизирована (проверьте свой ящик электронной почты)</font><br>";
 	}
