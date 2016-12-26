@@ -206,13 +206,14 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
 <td class=\"$class\">$row->date</td>
 </tr>\n";
         } else {
+$area_url=urlencode($row->area);
           $return=$return. "
-<tr onClick=\"document.location='?area=$row->area&message=$row->hash';return false\" style=\"cursor: pointer;\" $element_id>
-<td class=\"$class\">$row->fromname</td>
-<td class=\"$class\">$row->toname</td>
-<td class=\"$class\"><a href=\"?area=$row->area&message=$row->hash\">".txt2html($row->subject)."</a></td>
-<td class=\"$class\">$row->date</td>
-</tr>\n";
+          <tr onClick=\"document.location='?area=$area_url&message=$row->hash';return false\" style=\"cursor: pointer;\" $element_id>
+          <td class=\"$class\">$row->fromname</td>
+          <td class=\"$class\">$row->toname</td>
+          <td class=\"$class\"><a href=\"?area=$area_url&message=$row->hash\">".txt2html($row->subject)."</a></td>
+          <td class=\"$class\">$row->date</td>
+          </tr>\n";
         }
       }
       $return=$return. "</table>\n";
