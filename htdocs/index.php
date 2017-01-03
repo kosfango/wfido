@@ -546,7 +546,7 @@ $header_text
           print "<a href=\"?area=FAVORITES&message=$row->hash&mode=remove_from_favorites\"><img src=\"images/delete_from_favorites.gif\" alt=\" delete from favorites\" title=\"delete from favorites\"  width=16 height=16 border=0></a> ";
         }
           if ($area=="NETMAIL"){
-          print "<a href=\"?area=".rawurlencode($row->area)."&message=$row->hash&mode=delete\">delete</a>";
+	    print "<a href=\"?area=".rawurlencode($row->area)."&message=$row->hash&mode=delete\"><img src=\"images/trash.gif\" alt=\" delete message\" title=\"delete message\"  width=16 height=16 border=0></a> ";
         }
       }
       print "</td></tr>\n</table>\n";
