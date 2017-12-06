@@ -469,23 +469,34 @@ function type_style($string){
 }
 
 function external_links($return) {
-    $return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
+	$return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
 	$url = parse_url($arr[0]);
-	// images
-	if(preg_match('#\.(png|jpg|gif)$#', $url['path']))
-	{
-	    return '<img class=ext-image onclick="zoomzoom(this);" src="'. $arr[0] . '" />';
-	}
-	// youtube
-	if(in_array($url['host'], array('www.youtube.com', 'youtube.com'))
-	    && $url['path'] == '/watch'
-	    && isset($url['query']))
-	{
-	    parse_str($url['query'], $query);
-	    return sprintf('<iframe class="ext-video" src="http://www.youtube.com/embed/%s" allowfullscreen></iframe>', $query['v']);
-	}
+	$point=check_session($_COOKIE['SESSION']);
+	$row=mysql_fetch_object(mysql_query("select `scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'"));
+	if (!$row->media_disabled)
+	{		
+		// images
+		if(preg_match('#\.(png|jpg|gif|jpeg)$#', $url['path']))
+		{
+			if ($row->scale_img) { 
+				return '<img class=ext-image onclick="zoomzoom(this);" src="'.$arr[0] . '" width="'.$row->scale_value.'" />';
+// test				return '<a target="_blank" href="'.$arr[0].'">'.$arr[0].'</a>';
+			}
+			else {
+				return '<img class=ext-image onclick="zoomzoom(this);" src="'. $arr[0] . '" />';	
+			}
+		}
+		// youtube
+		if(in_array($url['host'], array('www.youtube.com', 'youtube.com'))
+			&& $url['path'] == '/watch'
+			&& isset($url['query']))
+		{
+			parse_str($url['query'], $query);
+			return sprintf('<iframe class="ext-video" src="https://www.youtube.com/embed/%s" allowfullscreen></iframe>', $query['v']);
+		}
+	}	
 	//links
-	return sprintf('<a href="safe_open.php?%1$s">%1$s</a>', $arr[0]);
+	return sprintf('<a target="_blank" href="safe_open.php?%1$s">%1$s</a>', $arr[0]);
     }, $return);
     return $return;
 }

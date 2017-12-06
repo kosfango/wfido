@@ -164,6 +164,9 @@ CREATE TABLE `users` (
   `jid` varchar(255) NOT NULL DEFAULT '',
   `confirm` varchar(64) NOT NULL DEFAULT '',
   `active` tinyint(1) NOT NULL DEFAULT '0',
+  `scale_img` tinyint(1) NOT NULL DEFAULT '0',
+  `scale_value` bigint(20) NOT NULL DEFAULT '1000',
+  `media_disabled` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`point`)
 ) ENGINE=MyISAM AUTO_INCREMENT=100 DEFAULT CHARSET=utf8;
 

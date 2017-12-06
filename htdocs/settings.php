@@ -109,14 +109,24 @@ if ($mode=="my"){
     }else {
       $_POST['ajax']=0;
     }
-    mysql_query("update `users` set `limit`='".$_POST['nums']."', `close_old_session`='".$_POST['close_old_session']."', `ajax`='".$_POST['ajax']."' where `point`='$point'");
+	 if ($_POST['scale_img']){
+      $_POST['scale_img']=1;
+    }else {
+      $_POST['scale_img']=0;
+    }
+	 if ($_POST['media_disabled']){
+      $_POST['media_disabled']=1;
+    }else {
+      $_POST['media_disabled']=0;
+    }
+    mysql_query("update `users` set `limit`='".$_POST['nums']."', `close_old_session`='".$_POST['close_old_session']."', `ajax`='".$_POST['ajax']."', `scale_img`='".$_POST['scale_img']."', `scale_value`='".$_POST['pxls']."', `media_disabled`='".$_POST['media_disabled']."' where `point`='$point'");
 
   }
   print "
    <form method=post action=\"?mode=other\">
    <table width=100%>\n";
 
-  $row=mysql_fetch_object(mysql_query("select `limit`,`close_old_session`,`ajax` from `users` where `point`='$point'"));
+  $row=mysql_fetch_object(mysql_query("select `limit`,`close_old_session`,`ajax`,`scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'"));
   if ($row->close_old_session) {
     $close_old_session=" checked";
   } else {
@@ -127,11 +137,24 @@ if ($mode=="my"){
   } else {
     $ajax="";
   }
+   if ($row->scale_img) {
+    $scale_img=" checked";
+  } else {
+    $scale_img="";
+  }
+  if ($row->media_disabled) {
+    $media_disabled=" checked";
+  } else {
+    $media_disabled="";
+  }
   print "
     <tr><td class=item>В режиме messages показывать писем не больше, чем...</td><td class=item><input type=text name=nums value=$row->limit></td></tr>
     <tr><td class=item>При логине закрывать старые сессии</td><td class=item><input type=checkbox name=close_old_session $close_old_session></td></tr>
     <tr><td class=item>Использовать javascript-интерфейс</td><td class=item><input type=checkbox name=ajax $ajax></td></tr>
-    <tr><td align=right colspan=2><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></tr>
+    <tr><td class=item>Масштабировать изображения</td><td class=item><input type=checkbox name=scale_img $scale_img></td></tr>
+	<tr><td class=item>Масштабировать изображения до, пикселей</td><td class=item><input type=text name=pxls value=$row->scale_value></td></tr>
+	<tr><td class=item>Показывать только ссылки на изображения/видео</td><td class=item><input type=checkbox name=media_disabled $media_disabled></td></tr>
+	<tr><td align=right colspan=2><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></tr>
    <table>
    </form>";
 } else {
