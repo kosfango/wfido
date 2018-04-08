@@ -63,16 +63,16 @@ if ($mode=="ansver" and $toname and ($area!="NETMAIL" or $toaddr)){
 //пихаем сообщение в базу, в таблицу outbox.
     if ($permission=="3") { //полный доступ
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1';");
+      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
     } elseif ($permission=="2") { //доступ с премодерацией
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0';");
+      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
     } elseif ($permission=="4") { //доступ через антиспам
       $hash=md5(rand());
       if (antispam($subject, $text)) { // возможно, спам. отправляем на премодерацию.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0';");
+        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
       } else { // не спам. отправляем в эху.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1';");
+        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
       }
     } else { // если права 1 или 0, значит прав на запись нет.
       mysql_query("
@@ -89,7 +89,7 @@ TO:   $toname($toaddr)
 =======================================
 $text
 * Origin: $myorigin
-', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', aprove='1';");
+', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', approve='1';");
     }
     header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: ?area='.$area."&message=".$hash);
