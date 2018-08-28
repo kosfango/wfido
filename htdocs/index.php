@@ -91,7 +91,6 @@ $text
 * Origin: $myorigin
 ', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', approve='1';");
     }
-    header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: ?area='.$area."&message=".$hash);
 exit;
 } elseif ($mode=="add_to_favorites"){

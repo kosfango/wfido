@@ -74,7 +74,6 @@ global $area,$hash,$webroot;
 	$row=mysql_fetch_object($result);
 	return $row->point;
     }else {
-	header ('HTTP/1.1 301 Moved Permanently');
 	header ('Location: '.$webroot.'/?login=1&area=' . urlencode($area).'&message='.$hash);
 	exit;
     }
@@ -115,7 +114,6 @@ global $sessionid,$mynode,$area,$hash,$webroot;
     		mysql_query ("UPDATE `sessions` SET `active`=0 WHERE `point`='$point' or `sessionid`='$sessionid'");
 	    }
     	    mysql_query ("INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
-	    header ('HTTP/1.1 301 Moved Permanently');
     	    header ('Location: '.$webroot.'/?area='.urlencode($area).'&message='.$hash);
     	    exit;
 	} else {
@@ -170,7 +168,6 @@ function check_password($point, $password) {
 function logout($sessionid) {
 global $point,$webroot;
     mysql_query ("UPDATE `sessions` SET active=0 WHERE sessionid='$sessionid'");
-    header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: '.$webroot.'/');
 }
 
