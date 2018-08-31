@@ -189,8 +189,9 @@ print "
     } else {
       $value="";
     }
+    $echonameurlenc=urlencode($row->area);
     print "
-      <tr><td class=item width=50%><input type=checkbox name='subs-$row->area' $value><a href='$webroot/index.php?area=$row->area'>$row->area</a></td><td class=item width=50%>$row->messages</td></tr>\n";
+      <tr><td class=item width=50%><input type=checkbox name='subs-$row->area' $value><a href='$webroot/index.php?area=$echonameurlenc'>$row->area</a></td><td class=item width=50%>$row->messages</td></tr>\n";
   }
   print"
     <tr><td align=right colspan=2><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></tr>$error
