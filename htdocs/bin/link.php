@@ -1,12 +1,12 @@
 #!/usr/bin/php
 
 <?
-
+if ( isset($_SERVER["REMOTE_ADDR"])) {
 if ($_SERVER["REMOTE_ADDR"]) {
   print "This script must be run from command line\n";
   exit;
 }
-
+}
 
 require (dirname($_SERVER["SCRIPT_FILENAME"]).'/../config.php');
 require (dirname($_SERVER["SCRIPT_FILENAME"]).'/../lib/lib.php');
@@ -19,9 +19,8 @@ if (file_exists($linker_lock_file)) {
 touch($linker_lock_file);
 
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
-
 // создаем временную таблицу для сообщений
-mysql_query("create temporary table `tmp` (
+mysqli_query($link, "create temporary table `tmp` (
    `id` bigint(64) NOT NULL,
    `msgid` varchar(128) NULL,
    `reply` varchar(128) NULL,
@@ -35,11 +34,10 @@ mysql_query("create temporary table `tmp` (
    `hash` varchar(128) NULL,
    `date` varchar(128) NULL,
    `subject` text NULL
-)  CHARSET=utf8");
-
+) ENGINE=InnoDB CHARSET=utf8;");
 
 if ($argv['1']) {
-  $area=$argv['1'];
+  $area=$argv ['1'];
 } else {
   $area="";
 }
@@ -49,23 +47,24 @@ if ($area) {
 } else { 
   $query=("select upper(area) as area from `messages` where thread='' and area!='' group by area order by area;");
 }
-$result=mysql_query($query);
-while ($row=mysql_fetch_object($result)) {
-
+$result=mysqli_query($link, $query);
+while ($row=mysqli_fetch_object($result)) {
   // на всякий случай очищаем временную таблицу
-  mysql_query("delete from `tmp`;");
+  $strict = "SET sql_mode = ''";
+  mysqli_query($link, $strict);
+  mysqli_query($link, "delete from `tmp`;");
   // заполняем временную таблицу письмами из линкуемой эхи
-  mysql_query("insert into `tmp` (id, msgid, reply, recieved,area,thread,level,inthread,fromname,fromaddr,hash,date,subject) 
+  mysqli_query($link, "insert into `tmp` (id, msgid, reply, recieved,area,thread,level,inthread,fromname,fromaddr,hash,date,subject)
                            select id, msgid, reply, recieved,area,thread,level,inthread,fromname,fromaddr,hash,date,subject
                             from `messages` where area=\"$row->area\";");
 
   print $row->area." ";
   $area_end=0;
   while ($area_end==0){
-    $result2=mysql_query("select msgid,reply,subject,fromname,fromaddr,date,recieved,hash from `tmp` where thread='' order by recieved limit 1;");
+    $result2=mysqli_query($link, "select msgid,reply,subject,fromname,fromaddr,date,recieved,hash from `tmp` where thread='' order by recieved limit 1;");
 print(".");
-    if (mysql_num_rows($result2)){
-      $row2=mysql_fetch_object($result2);
+    if (mysqli_num_rows($result2)){
+      $row2=mysqli_fetch_object($result2);
       $thread_info = array ( 
 	'area'			=> $row->area,
 	'thread'		=> find_begin($row2->msgid),
@@ -94,27 +93,11 @@ print(".");
 
 unlink($linker_lock_file);
 
-/*
 function find_begin($msgid){
-  $result=mysql_query("select reply from `tmp` where msgid=\"$msgid\"");
-  if(mysql_num_rows($result)){
-    $row=mysql_fetch_object($result);
-    if ($row->reply) {
-      $return=find_begin($row->reply);
-    } else {
-      $return=$msgid;
-    }
-  } else {
-    $return=$msgid;
-  }
-  return $return;
-}
-*/
-
-function find_begin($msgid){
-  $result=mysql_query("select reply from `tmp` where msgid=\"$msgid\"");
-  if(mysql_num_rows($result)){
-    $row=mysql_fetch_object($result);
+  global $link;
+  $result=mysqli_query($link, "select reply from `tmp` where msgid=\"$msgid\"");
+  if(mysqli_num_rows($result)){
+    $row=mysqli_fetch_object($result);
     if ($row->reply) {
       $return=find_begin($row->reply);
       if (!$return) {
@@ -129,48 +112,16 @@ function find_begin($msgid){
   return $return;
 }
 
-function match_text($str1,$str2){
-  $str1=preg_replace('/^Re/','',$str1);
-  $str2=preg_replace('/^Re/','',$str2);
-  $str1=preg_replace('/Н/','H',$str1);
-  $str2=preg_replace('/Н/','H',$str2);
-  $str1=preg_replace('/(:|\^| |[0-9]|\[.*\]|\(no subject\))/','',$str1);
-  $str2=preg_replace('/(:|\^| |[0-9]|\[.*\]|\(no subject\))/','',$str2);
-  if (levenshtein($str1,$str2, 1,10,1) < 20) {
-    return 1;
-  }else{
-    print "splitted thread: $str1\n";
-    return 0;
-  }
-}
-
-function save_thread($thread_info){
-    mysql_query("
-        insert into `tmp_threads` set
-          area=\"".$thread_info['area']."\",
-          thread=\"".$thread_info['thread']."\",
-          hash=\"".$thread_info['last_hash']."\",
-          subject=\"".$thread_info['subject']."\",
-          author=\"".$thread_info['author']."\",
-          author_address=\"".$thread_info['author_address']."\",
-          author_date=\"".$thread_info['author_date']."\",
-          last_author=\"".$thread_info['last_author']."\",
-          last_author_date=\"".$thread_info['last_author_date']."\",
-          num=\"".$thread_info['num']."\",
-          lastupdate=\"".$thread_info['lastupdate']."\";
-    ");
-
-}
-
 function set_thread($thread_info,$msgid=0,$level=0){
+  global $link;
   if (!$msgid){ $msgid=$thread_info['thread']; }
-  mysql_query("delete from `tmp` where msgid=\"$msgid\";");
-  mysql_query("update `messages` set thread=\"".$thread_info['thread']."\", inthread=\"".$thread_info['num']."\", level=\"$level\" where msgid=\"$msgid\" and area=\"".$thread_info['area']."\";");
+  mysqli_query($link, "delete from `tmp` where msgid=\"$msgid\";");
+  mysqli_query($link, "update `messages` set thread=\"".$thread_info['thread']."\", inthread=\"".$thread_info['num']."\", level=\"$level\" where msgid=\"$msgid\" and area=\"".$thread_info['area']."\";");
   $thread_info['num']++;
-  $result=mysql_query("select msgid,recieved,date,fromaddr,fromname,hash,subject from `tmp` where reply=\"$msgid\" order by recieved;");
-  while ($row=mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select msgid,recieved,date,fromaddr,fromname,hash,subject from `tmp` where reply=\"$msgid\" order by recieved;");
+  while ($row=mysqli_fetch_object($result)){
     if (match_text($row->subject,$thread_info['subject'])){
-      if ($row->recieved > $thread_info['recieved']){
+      if ($row->recieved > $thread_info['lastupdate']){
         $thread_info['lastupdate']=$row->recieved;
         $thread_info['last_author']=$row->fromname;
         $thread_info['last_author_address']=$row->fromaddr;
@@ -198,6 +149,41 @@ function set_thread($thread_info,$msgid=0,$level=0){
     }
   }
   return $thread_info;
+}
+
+function match_text($str1,$str2){
+  $str1=preg_replace('/^Re/','',$str1);
+  $str2=preg_replace('/^Re/','',$str2);
+  $str1=preg_replace('/Б√▓/','H',$str1);
+  $str2=preg_replace('/Б√▓/','H',$str2);
+  $str1=preg_replace('/(:|\^| |[0-9]|\[.*\]|\(no subject\))/','',$str1);
+  $str2=preg_replace('/(:|\^| |[0-9]|\[.*\]|\(no subject\))/','',$str2);
+  if (levenshtein($str1,$str2, 1,10,1) < 20) {
+    return 1;
+  }else{
+    print "splitted thread: $str1\n";
+    return 0;
+  }
+}
+
+
+function save_thread($thread_info){
+    global $link;
+    mysqli_query($link, "
+        insert into `tmp_threads` set
+          area=\"".$thread_info['area']."\",
+          thread=\"".$thread_info['thread']."\",
+          hash=\"".$thread_info['last_hash']."\",
+          subject=\"".$thread_info['subject']."\",
+          author=\"".$thread_info['author']."\",
+          author_address=\"".$thread_info['author_address']."\",
+          author_date=\"".$thread_info['author_date']."\",
+          last_author=\"".$thread_info['last_author']."\",
+          last_author_date=\"".$thread_info['last_author_date']."\",
+          num=\"".$thread_info['num']."\",
+          lastupdate=\"".$thread_info['lastupdate']."\";
+    ");
+
 }
 
 

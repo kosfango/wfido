@@ -12,7 +12,7 @@ require ('config.php');
 require ('lib/lib.php');
 fix_magic_quotes_gpc();
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
-mysql_query("set names utf8;");
+mysqli_query($link, "set names utf8");
 
 $action=$_GET["action"];
 
@@ -39,7 +39,7 @@ if ($action=="login") {
 	$expire=0;
 	$ip=$_SERVER["REMOTE_ADDR"];
 	$browser="api";
-	mysql_query ("INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
+	mysqli_query($link, "INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
 	print "
 	<response>
 		<status>ok</status>
@@ -64,11 +64,11 @@ if ($action=="login") {
     if ($point){
 	$myaddr=$mynode.".".$point;
 	//Нетмайл:
-	$result=mysql_query("select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area;");
+	$result=mysqli_query($link, "select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area");
 
 	//считаем количество сообщений
-	if (mysql_num_rows($result)){ 
-	  $row = mysql_fetch_object($result);
+	if (mysqli_num_rows($result)){ 
+	  $row = mysqli_fetch_object($result);
 	  $nummsg = $row->nummsg;
 	} else {
 	  $nummsg="0";
@@ -82,9 +82,9 @@ if ($action=="login") {
 	</area>";
 
 	//Все остальные эхи:
-	$result=mysql_query("select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
-	if (mysql_num_rows($result)) {
-	  while ($row = mysql_fetch_object($result)) {
+	$result=mysqli_query($link, "select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
+	if (mysqli_num_rows($result)) {
+	  while ($row = mysqli_fetch_object($result)) {
 	      $return=$return .  "	<area>
 	    <areaname>".rsc(strtoupper($row->area))."</areaname>
 	    <nummsg>$row->nummsg</nummsg>
@@ -142,9 +142,9 @@ print '
 ';
 
 //print "\n$query\n";
-	    $result=mysql_query($query);
-	    if (mysql_num_rows($result)) {
-		while ($row = mysql_fetch_object($result)) {
+	    $result=mysqli_query($link, $query);
+	    if (mysqli_num_rows($result)) {
+		while ($row = mysqli_fetch_object($result)) {
 		    if (!$current_watermark) {$current_watermark=$row->rec;}
         	    if (!trim($row->subject)) {$row->subject="(no subject)";}
         	    print "
@@ -202,9 +202,9 @@ print "
     $permission=get_area_permissions($area);
     if ($permission or strtoupper($area)=="NETMAIL"){
 	$query="select * from `messages` where hash='$hash';"; //вот тут, кстати, будет дыра в секьюрити. как и в обычом wfido. там уже есть. area не проверяется. даже если прав на чтение эхи нет, письмо отдастся.
-	$result=mysql_query($query);
-	if (mysql_num_rows($result)) {
-	    $row = mysql_fetch_object($result);
+	$result=mysqli_query($link, $query);
+	if (mysqli_num_rows($result)) {
+	    $row = mysqli_fetch_object($result);
 	    print "
 <body   bgcolor='#000000' text='#DDDDDD'  alink='#FDD017' link='#FDD017' vlink='#FDD017' topmargin='0' leftmargin='0' rightmargin='0'>
 <table border=0 width='100%'>
@@ -258,9 +258,9 @@ if ($do_compress){
 }
 
 function point_by_sessionid($sessionid){
-    $result=mysql_query("SELECT point FROM `sessions` WHERE `sessionid`='$sessionid' and `browser`='api' and `active`=1");
-    if (mysql_num_rows($result)==1) {
-	$row=mysql_fetch_object($result);
+    $result=mysqli_query($link, "SELECT point FROM `sessions` WHERE `sessionid`='$sessionid' and `browser`='api' and `active`=1");
+    if (mysqli_num_rows($result)==1) {
+	$row=mysqli_fetch_object($result);
 	return $row->point;
     }else {
 	return 0;

@@ -3,7 +3,6 @@
 require ('config.php');
 require ('lib/lib.php');
 require ('lib/sphinxapi.php');
-
 start_timer();
 
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
@@ -22,7 +21,8 @@ if(!$page) {
 
 $result_on_page=30;
 
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query = mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
@@ -59,8 +59,8 @@ if ($area){
   print "<option value='' selected>All areas\n";
 }
 
-$result=mysql_query("select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
-while ($row=mysql_fetch_object($result)) {
+$result=mysqli_query($link, "select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
+while ($row=mysqli_fetch_object($result)) {
   $selected="";
   if ( strtoupper($area)==$row->area) {
     $selected=" selected";
@@ -80,7 +80,8 @@ if ($string){
   $search->SetMatchMode(SPH_MATCH_EXTENDED2);
   $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
   if ($area) {
-    $area32=mysql_fetch_object(mysql_query("select CRC32('".strtoupper($area)."') as area32;"))->area32;
+    $query = mysqli_query($link, "select CRC32('".strtoupper($area)."') as area32");
+    $area32=mysqli_fetch_object($query)->area32;
     $search->SetFilter('area32',array($area32));
   }
   $offset=($page-1)*$result_on_page;

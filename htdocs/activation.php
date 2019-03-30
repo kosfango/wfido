@@ -4,7 +4,6 @@ header("Content-type: text/html; charset=koi8-r");
 
 require ('config.php');
 require ('lib/lib.php');
-
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 
@@ -23,10 +22,10 @@ print "<html>
 
 
 if ($point and $key){
-  $result=mysql_query("select name from `users` where confirm='$key' and point='$point';");
-  if (mysql_num_rows($result)){
-    $row = mysql_fetch_object($result);
-    mysql_query("update `users` set active='1' where confirm='$key' and point='$point';");
+  $result=mysqli_query($link, "select name from `users` where confirm='$key' and point='$point'");
+  if (mysqli_num_rows($result)){
+    $row = mysqli_fetch_object($result);
+    mysqli_query($link, "update `users` set active='1' where confirm='$key' and point='$point'");
     print "
      <tr><td>".$row->name.", учетная запись активирована<br></td></tr>
      <tr><td align=right><a href='$mywww'>Войти</a></td></tr>

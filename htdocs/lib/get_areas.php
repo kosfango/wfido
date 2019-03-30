@@ -3,9 +3,7 @@
 require_once ('../config.php');
 require_once ('lib.php');
 require_once ('JsHttpRequest.php');
-
 $JsHttpRequest = new JsHttpRequest("koi8-r");
-
 if ($_REQUEST['area']) {
     $area=strtoupper(substr($_REQUEST['area'],0,128));
 } else {
@@ -23,18 +21,18 @@ fix_magic_quotes_gpc();
 
 $point=check_session($_COOKIE['SESSION']);
 //Получаем инфо о юзере
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query=mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
 //Рисуем список эх
 
 //Нетмайл:
-$result=mysql_query("select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area;");
-
+$result=mysqli_query($link, "select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area");
 //считаем количество сообщений
-if (mysql_num_rows($result)){ 
-  $row = mysql_fetch_object($result);
+if (mysqli_num_rows($result)){ 
+  $row = mysqli_fetch_object($result);
   $nummsg = $row->nummsg;
 } else {
   $nummsg="0";
@@ -53,11 +51,11 @@ if ($area=="NETMAIL") {
 $return= "<p onClick=\"document.location='?area=NETMAIL';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=NETMAIL\"  class=\"netmail\">NETMAIL</a> ($nummsg) $newmessages</p>\n";
 
 //Карбонка:
-$result=mysql_query("select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where  messages.area!='' and messages.toname='$myname' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date;");
-$result2=mysql_query("select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.fromname='$myname' and messages.area!='' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date;");
-if (mysql_num_rows($result) or mysql_num_rows($result2)){
-  $row = mysql_fetch_object($result);
-  $row2 = mysql_fetch_object($result2);
+$result=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where  messages.area!='' and messages.toname='$myname' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
+$result2=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.fromname='$myname' and messages.area!='' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
+if (mysqli_num_rows($result) or mysqli_num_rows($result2)){
+  $row = mysqli_fetch_object($result);
+  $row2 = mysqli_fetch_object($result2);
   $nummsg = $row->nummsg + $row2->nummsg;
 } else {
   $nummsg="0";
@@ -76,9 +74,9 @@ if ($area=="CARBONAREA") {
 $return=$return . "<p onClick=\"document.location='?area=CARBONAREA';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=CARBONAREA\" class=\"carbonarea\">CARBONAREA</a> ($nummsg) $newmessages</p>\n";
 
 //Все остальные эхи:
-$result=mysql_query("select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
-if (mysql_num_rows($result)) {
-  while ($row = mysql_fetch_object($result)) {
+$result=mysqli_query($link, "select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
+if (mysqli_num_rows($result)) {
+  while ($row = mysqli_fetch_object($result)) {
     if ($area==strtoupper($row->area)) {
       $class="selected";
       $newmessages="";
@@ -90,10 +88,11 @@ if (mysql_num_rows($result)) {
         $newmessages="";
       }
     }
+    $area_url=urlencode($row->area);
     if ($mode=="thread"){
-      $return=$return .  "<p onClick=\"document.location='?area=$row->area&mode=thread';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$row->area&mode=thread\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
+    $return=$return .  "<p onClick=\"document.location='?area=$area_url&mode=thread';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$area_url&mode=thread\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
     } else {
-      $return=$return .  "<p onClick=\"document.location='?area=$row->area';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$row->area\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
+    $return=$return .  "<p onClick=\"document.location='?area=$area_url';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=$area_url\" class=\"echo\">$row->area</a> ($row->nummsg) $newmessages</p>\n";
     }
   }
 }

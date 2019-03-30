@@ -2,18 +2,16 @@
 
 require ('config.php');
 require ('lib/lib.php');
-
 start_timer();
 
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 fix_post();
 $point=check_session($_COOKIE['SESSION']);
-
 $mode=substr($_GET["mode"],0,128);
 
-
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query = mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
@@ -64,18 +62,18 @@ if ($mode=="my"){
 
 
   if ($_POST['save']){
-    mysql_query("update `users` set `origin`='".$_POST['origin']."', `name`='".$_POST['name']."', `email`='".$_POST['email']."' where `point`='$point';");
+    mysqli_query($link, "update `users` set `origin`='".$_POST['origin']."', `name`='".$_POST['name']."', `email`='".$_POST['email']."' where `point`='$point'");
     if ($_POST['newpassword'] and $_POST['newpassword']==$_POST['newpassword2']){
-      if (mysql_num_rows(mysql_query("select * from `users` where `password`='".$_POST['oldpassword']."' and `point`='$point';"))){
-	mysql_query("update `users` set `password`='".$_POST['newpassword']."' where `point`='$point';");
+      if (mysqli_num_rows(mysqli_query($link, "select * from `users` where `password`='".$_POST['oldpassword']."' and `point`='$point'"))){
+	mysqli_query($link, "update `users` set `password`='".$_POST['newpassword']."' where `point`='$point'");
 	$error="\n<tr><td align=center colspan=2><font color=green>OK, password updated</font></td></tr>";
       } else {
 	$error="\n<tr><td align=center colspan=2><font color=red>incorrect old password</font></td></tr>";
       }
     }
   }
-  $result=mysql_query("select * from `users` where point='$point'");
-  $row=mysql_fetch_object($result);
+  $result=mysqli_query($link, "select * from `users` where point='$point'");
+  $row=mysqli_fetch_object($result);
   print "
    <form method=post action=\"?mode=my\">
    <table width=100%>
@@ -119,14 +117,14 @@ if ($mode=="my"){
     }else {
       $_POST['media_disabled']=0;
     }
-    mysql_query("update `users` set `limit`='".$_POST['nums']."', `close_old_session`='".$_POST['close_old_session']."', `ajax`='".$_POST['ajax']."', `scale_img`='".$_POST['scale_img']."', `scale_value`='".$_POST['pxls']."', `media_disabled`='".$_POST['media_disabled']."' where `point`='$point'");
+    mysqli_query($link, "update `users` set `limit`='".$_POST['nums']."', `close_old_session`='".$_POST['close_old_session']."', `ajax`='".$_POST['ajax']."', `scale_img`='".$_POST['scale_img']."', `scale_value`='".$_POST['pxls']."', `media_disabled`='".$_POST['media_disabled']."' where `point`='$point'");
 
   }
   print "
    <form method=post action=\"?mode=other\">
    <table width=100%>\n";
-
-  $row=mysql_fetch_object(mysql_query("select `limit`,`close_old_session`,`ajax`,`scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'"));
+  $query=mysqli_query($link, "select `limit`,`close_old_session`,`ajax`,`scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'");
+  $row=mysqli_fetch_object($query);
   if ($row->close_old_session) {
     $close_old_session=" checked";
   } else {
@@ -159,11 +157,11 @@ if ($mode=="my"){
    </form>";
 } else {
   if ($_POST['save']){
-    mysql_query("delete from `subscribe` where `point`='$point';");
-    foreach ($_POST as $key=>$value) {
+    mysqli_query($link, "delete from `subscribe` where `point`='$point'");
+    foreach (getRealInput('POST') as $key=>$value) {
       if (substr($key,0,5)=="subs-"){
         $area=substr($key,5);
-	mysql_query("insert into `subscribe` set `area`='$area', `point`='$point'");
+	mysqli_query($link, "insert into `subscribe` set `area`='$area', `point`='$point'");
       }
     }
   }
@@ -181,9 +179,8 @@ if ($mode=="my"){
 print "
     <tr><td class=item align=center width=50%><a href='?mode=areafix&order=area'>имя конференции</a></td><td class=item align=center width=50%><a href='?mode=areafix&order=messages'>кол-во сообщений</a></td></tr>\n";
 
-  $result=mysql_query("select upper(areas.area) as area, areas.messages as messages, subscribe.area as subs from areas join user_groups join area_groups left join subscribe on (areas.area=subscribe.area and subscribe.point='$point') where user_groups.point='$point' and user_groups.perm and area_groups.group=user_groups.group and areas.area=area_groups.area order by $order;");
-
-  while($row=mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select upper(areas.area) as area, areas.messages as messages, subscribe.area as subs from areas join user_groups join area_groups left join subscribe on (areas.area=subscribe.area and subscribe.point='$point') where user_groups.point='$point' and user_groups.perm and area_groups.group=user_groups.group and areas.area=area_groups.area order by $order");
+  while($row=mysqli_fetch_object($result)){
     if ($row->subs){
       $value=" checked";
     } else {

@@ -17,26 +17,27 @@ fix_magic_quotes_gpc();
 
 $point=check_session($_COOKIE['SESSION']);
 //Получаем инфо о юзере
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query=mysqli_query($link, "select * from `users` where point='$point'");
+$row=mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
 $return=0;
 
 if ($area=='NETMAIL'){
-  $result=mysql_query("select unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where area='' and (toaddr='$myaddr' or fromaddr='$myaddr') group by area;");
-  if (mysql_num_rows($result)) {
-    $row = mysql_fetch_object($result);
+  $result=mysqli_query($link, "select unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where area='' and (toaddr='$myaddr' or fromaddr='$myaddr') group by area");
+  if (mysqli_num_rows($result)) {
+    $row = mysqli_fetch_object($result);
     $lastmessage=$row->rec;
     $current=$row->cur;
   }
 } elseif (strtoupper($area)=='CARBONAREA'){
 //доделать: включать письма только из тех эх, на которые есть права
-  $result=mysql_query("select  area, unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where   toname='$myname' and area!='' group by toname;");
-  $result2=mysql_query("select area, unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where fromname='$myname' and area!='' group by fromname ;");
-  if (mysql_num_rows($result) or mysql_num_rows($result2)){
-    $row = mysql_fetch_object($result);
-    $row2 = mysql_fetch_object($result2);
+  $result=mysqli_query($link, "select  area, unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where   toname='$myname' and area!='' group by toname");
+  $result2=mysqli_query($link, "select area, unix_timestamp(max(recieved)) as rec,unix_timestamp(current_timestamp) as cur from messages where fromname='$myname' and area!='' group by fromname");
+  if (mysqli_num_rows($result) or mysqli_num_rows($result2)){
+    $row = mysqli_fetch_object($result);
+    $row2 = mysqli_fetch_object($result2);
     if ($row->rec > $row2->rec){
       $lastmessage=$row->rec;
       $current=$row->cur;
@@ -48,9 +49,9 @@ if ($area=='NETMAIL'){
 } else {
 //сюда надо добавить проверку прав на эху
 
-  $result=mysql_query("select unix_timestamp(areas.recieved) as rec, unix_timestamp(current_timestamp) as cur from `areas` where areas.area='$area';");
-  if (mysql_num_rows($result)) {
-    $row = mysql_fetch_object($result);
+  $result=mysqli_query($link, "select unix_timestamp(areas.recieved) as rec, unix_timestamp(current_timestamp) as cur from `areas` where areas.area='$area'");
+  if (mysqli_num_rows($result)) {
+    $row = mysqli_fetch_object($result);
     $lastmessage=$row->rec;
     $current=$row->cur;
   }

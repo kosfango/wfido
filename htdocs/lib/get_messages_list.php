@@ -3,9 +3,7 @@
 require_once ('../config.php');
 require_once ('lib.php');
 require_once ('JsHttpRequest.php');
-
 $JsHttpRequest = new JsHttpRequest("koi8-r");
-
 if ($_REQUEST['area']) {
     $area=strtoupper(substr($_REQUEST['area'],0,128));
 } else {
@@ -29,10 +27,10 @@ fix_magic_quotes_gpc();
 
 $point=check_session($_COOKIE['SESSION']);
 //Получаем инфо о юзере
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query=mysqli_query($link, "select * from `users` where point='$point'");
+$row=mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
-
 $permission=get_area_permissions($area);
 
 
@@ -43,13 +41,13 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
         $hash=get_area_last_message($area);
     }
     $return= "\n<table width=100%>";
-    $result=mysql_query("select thread from `messages` where hash='$hash';");
+    $result=mysqli_query($link, "select thread from `messages` where hash='$hash'");
     $thread_selected="";
-    if (mysql_num_rows($result)){
-      $row=mysql_fetch_object($result);
+    if (mysqli_num_rows($result)){
+      $row=mysqli_fetch_object($result);
       $thread_selected=$row->thread;
     }
-    $result=mysql_query("
+    $result=mysqli_query($link, "
       select 
         subject, hash, last_author_date as date, unix_timestamp(lastupdate) as rec,
         threads.thread as thread, last_author as fromname, unix_timestamp(last_view_date) as lastview, num 
@@ -67,11 +65,11 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
         threads.area='$area'
       order
         by lastupdate desc
-  ;");
+  ");
 
 
     $header_text="&nbsp;";
-    while ($row=mysql_fetch_object($result)){
+    while ($row=mysqli_fetch_object($result)){
       if (!trim($row->subject)) {$row->subject="(no subject)";}
       if ($row->rec>$row->lastview and $row->thread==$thread_selected) {
         $class="newselected";
@@ -103,7 +101,7 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
     } elseif ($area=="CARBONAREA") {
 
       //создаем временную таблицу для всех откарбоненных писем
-      mysql_query("CREATE temporary TABLE `tmp` (
+      mysqli_query($link, "CREATE temporary TABLE `tmp` (
           `fromname` varchar(255) NOT NULL default '',
           `fromaddr` text NOT NULL,
           `toname` varchar(255) NOT NULL default '',
@@ -118,10 +116,10 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
 	) CHARSET=utf8;" );
 
       //карбоним в нее сообщения
-      mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
+      mysqli_query($link, "insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
                                from `messages` where toname='$myname' and area!=''");
-      mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
+      mysqli_query($link, "insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
                                from `messages` where fromname='$myname' and area!=''");
       $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `tmp` order by rec desc";
@@ -133,8 +131,8 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
     } else {
       $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `messages` where area='$area' order by id desc";
     }
-
-    $row=mysql_fetch_object(mysql_query("select `limit` from `users` where `point`='$point';"));
+    $query2=mysqli_query($link, "select `limit` from `users` where `point`='$point'");
+    $row=mysqli_fetch_object($query2);
     $user_limit=$row->limit;
     if ($user_limit) {
       $query=$query." limit $user_limit ;";
@@ -142,10 +140,10 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
       $query=$query." ;";
     }
 
-    $result=mysql_query($query);
-    if (mysql_num_rows($result)) {
+    $result=mysqli_query($link, $query);
+    if (mysqli_num_rows($result)) {
       $return= "<table width=100%>\n";
-      while ($row = mysql_fetch_object($result)) {
+      while ($row = mysqli_fetch_object($result)) {
         //если не указано, какое именно письмо нас интересует, то выбираем последнее просмотренное.
         //если последнее просмотренное не указано, то показывать будем первое же письмо
         if (!$hash and $last_viewed_message_hash) {

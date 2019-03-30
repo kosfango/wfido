@@ -1,7 +1,6 @@
 <?
 require ('config.php');
 require ('lib/lib.php');
-
 start_timer();
 
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
@@ -10,7 +9,6 @@ fix_post();
 
 
 $point=check_session($_COOKIE['SESSION']);
-
 if ($point!=$adminpoint){
   print "Access denied";
   exit;
@@ -28,7 +26,8 @@ print "<html>
 <body>
 ";
 
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query = mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
@@ -77,20 +76,22 @@ print "  </td>
 
 
 if ($mode=="areas"){
+if (isset($_POST['save']))
+{
   if ($_POST['save']){
-    foreach ($_POST as $key=>$value) {
+    foreach (getRealInput('POST') as $key=>$value) {
       if (substr($key,0,9)=="checkbox-"){
         $area=substr($key,9);
-	mysql_query("replace into `area_groups` set area='".$area."', area_groups.group='".$_POST['set_group']."';");
+	mysqli_query($link, "replace into `area_groups` set area='".$area."', area_groups.group='".$_POST['set_group']."'");
       }
     }
   }
-
+}
   print "<form method=post action='?mode=areas'> 
 <table width=100%>
  <tr><td class=header>area</td><td class=header>group</td></tr>";
-   $result=mysql_query("select distinct upper(areas.area) as area, groups.name as grp from areas left join area_groups on areas.area=area_groups.area  left join groups on area_groups.group=groups.id order by area;");
-  while ($row = mysql_fetch_object($result)){
+   $result=mysqli_query($link, "select distinct upper(areas.area) as area, groups.name as grp from areas left join area_groups on areas.area=area_groups.area  left join groups on area_groups.group=groups.id order by area");
+  while ($row = mysqli_fetch_object($result)){
     if (!$row->grp){
       $group="<font color=red>группа не задана</font>";
     } else {
@@ -99,8 +100,8 @@ if ($mode=="areas"){
     print " <tr><td class=item>$row->area</td><td class=item><input type=checkbox name=\"checkbox-$row->area\">$group</td></tr>\n";
   }
   print "<tr><td align=right class=item>Сменить для выбранных эхоконференций группу на</td><td class=item><select name=set_group style=\"width: 100%;\">";
-  $result=mysql_query("select id,name from groups;");
-  while ($row=mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select id,name from groups");
+  while ($row=mysqli_fetch_object($result)){
     print "<option value=\"$row->id\"> $row->name";
   }
   print "</select></td></tr>
@@ -109,23 +110,25 @@ if ($mode=="areas"){
 
 
 }elseif ($mode=="groups"){
+if (isset($_POST['save']))
+{
   if ($_POST['save']){
-    foreach ($_POST as $key=>$value) {
+    foreach (getRealInput('POST') as $key=>$value) {
       if (substr($key,0,5)=="text-" and $value){
         $id=substr($key,5);
-	mysql_query("replace into `groups` set id='".$id."', name='".$value."';");
+	mysqli_query($link, "replace into `groups` set id='".$id."', name='".$value."'");
       }
     }
     if ($_POST['new_group']){
-      mysql_query("insert into `groups` set name='".$_POST['new_group']."';");
+      mysqli_query($link, "insert into `groups` set name='".$_POST['new_group']."'");
     }
   }
-
+}
   print "<form method=post action='?mode=groups'> 
 <table width=100%>
  <tr><td class=header>group name</td><td class=header>rename to</td></tr>";
-  $result=mysql_query("select * from groups;");
-  while ($row = mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select * from groups");
+  while ($row = mysqli_fetch_object($result)){
     print " <tr><td class=item>$row->name</td><td class=item><input type=text name=\"text-$row->id\" value=\"\"></td></tr>\n";
   }
   print "
@@ -136,31 +139,33 @@ if ($mode=="areas"){
 
 
 }elseif ($mode=="users"){
+if (isset($_POST['save']))
+{
   if ($_POST['save']){
     foreach ($_POST as $key=>$value) {
       if (substr($key,0,5)=="perm-" and $value){
         $key=substr($key,5);
 	list($user,$group)=explode("-",$key);
 	if ($value=="deny"){
-	  mysql_query ("delete from `user_groups` where `point`='$user' and `group`='$group';");
+	  mysqli_query($link, "delete from `user_groups` where `point`='$user' and `group`='$group'");
 	}elseif($value=="read"){
-	  mysql_query ("replace into `user_groups` set `point`='$user', `group`='$group', `perm`='1';");
+	  mysqli_query($link, "replace into `user_groups` set `point`='$user', `group`='$group', `perm`='1'");
 	}elseif($value=="premod"){
-	  mysql_query ("replace into `user_groups` set `point`='$user', `group`='$group', `perm`='2';");
+	  mysqli_query($link, "replace into `user_groups` set `point`='$user', `group`='$group', `perm`='2'");
 	}elseif($value=="antispam"){
-	  mysql_query ("replace into `user_groups` set `point`='$user', `group`='$group', `perm`='4';");
+	  mysqli_query($link, "replace into `user_groups` set `point`='$user', `group`='$group', `perm`='4'");
 	}elseif($value=="write"){
-	  mysql_query ("replace into `user_groups` set `point`='$user', `group`='$group', `perm`='3';");
+	  mysqli_query($link, "replace into `user_groups` set `point`='$user', `group`='$group', `perm`='3'");
 	}
       }
     }
   }
-
+}
   print "<form method=post action='?mode=users'> 
 <table width=100%>
  <tr><td class=header>user info</td><td class=header>groups</td></tr>\n";
-  $result=mysql_query("select point,name,email,active from users order by point;");
-    while ($row = mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select point,name,email,active from users order by point");
+    while ($row = mysqli_fetch_object($result)){
     if ($row->active) {
       $active="<font color=green>active</font>";
     } else {
@@ -169,8 +174,8 @@ if ($mode=="areas"){
     print " <tr>
   <td class=item valign=top>$row->name($mynode.$row->point, $row->email), $active</td>
   <td class=item>\n";
-    $result2=mysql_query("select groups.name as groupname, groups.id as groupid, user_groups.point as point, user_groups.perm as `perm` from groups left join user_groups on (groups.id=user_groups.group and user_groups.point='$row->point');");
-    while ($row2 = mysql_fetch_object($result2)){
+    $result2=mysqli_query($link, "select groups.name as groupname, groups.id as groupid, user_groups.point as point, user_groups.perm as `perm` from groups left join user_groups on (groups.id=user_groups.group and user_groups.point='$row->point')");
+    while ($row2 = mysqli_fetch_object($result2)){
       $read="";
       $write="";
       $premod="";
@@ -212,43 +217,45 @@ if ($mode=="areas"){
 </table>
 </form>";
 }elseif ($mode=="default"){
+if (isset($_POST['save']))
+{
   if ($_POST['save']){
-    mysql_query("delete from `default`;");
-    mysql_query("delete from `default_perm`;");
-    mysql_query("delete from `default_subscribe`;");
+    mysqli_query($link, "delete from `default`");
+    mysqli_query($link, "delete from `default_perm`");
+    mysqli_query($link, "delete from `default_subscribe`");
     foreach ($_POST as $key=>$value) {
       if (substr($key,0,6)=="group-" and $value){
         $group_id=substr($key,6);
 	if ($value=="write") {
-	  mysql_query ("insert into `default_perm` set `group`='$group_id', `perm`='3';");
-	} elseif ($value=="antispam") {
-	  mysql_query ("insert into `default_perm` set `group`='$group_id', `perm`='4';");
+	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='3'");
+	} elseif ($vale=="antispam") {
+	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='4'");
 	} elseif ($value=="premod") {
-	  mysql_query ("insert into `default_perm` set `group`='$group_id', `perm`='2';");
+	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='2'");
 	} elseif ($value=="read") {
-	  mysql_query ("insert into `default_perm` set `group`='$group_id', `perm`='1';");
+	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='1'");
 	}
       } elseif (substr($key,0,5)=="subs-" and $value){
         $group_id=substr($key,5);
-	mysql_query("insert into `default_subscribe` set `group`='$group_id';");
+	mysqli_query($link, "insert into `default_subscribe` set `group`='$group_id'");
       }
     }
     if ($_POST['origin']){
-      mysql_query("insert into `default` set `value`='".$_POST['origin']."', `key`='origin';");
+      mysqli_query($link, "insert into `default` set `value`='".$_POST['origin']."', `key`='origin'");
     }
   }
-
+}
   print "<form method=post action='?mode=default'>\n";
-  $result=mysql_query("select * from `default` where `key`='origin';");
-  $row = mysql_fetch_object($result);
+  $result=mysqli_query($link, "select * from `default` where `key`='origin'");
+  $row = mysqli_fetch_object($result);
   print"<table width=100%>
 <tr><td class=header colspan=2>Default settings</td></tr>
 <tr><td class=\"item\">Origin:</td><td><input type=text name=origin zise=128 style=\"width: 100%\" value='$row->value'></td></tr>
 </table>
 <table width=100%>
  <tr><td class=header>group</td><td class=header>Default permissions</td><td class=header>subscribe</td></tr>";
-  $result=mysql_query("select groups.name as group_name, groups.id as group_id, default_perm.perm as `perm`, default_subscribe.group as subscribe from groups left join `default_perm` on (groups.id=default_perm.group) left join `default_subscribe` on (groups.id=default_subscribe.group);");
-  while ($row = mysql_fetch_object($result)){
+  $result=mysqli_query($link, "select groups.name as group_name, groups.id as group_id, default_perm.perm as `perm`, default_subscribe.group as subscribe from groups left join `default_perm` on (groups.id=default_perm.group) left join `default_subscribe` on (groups.id=default_subscribe.group)");
+  while ($row = mysqli_fetch_object($result)){
     $read="";
     $write="";
     $deny="";
@@ -293,14 +300,14 @@ if ($mode=="areas"){
 
 } elseif ($mode=="sent") {
   $hash=substr($_GET["message"],0,128);
-  $result=mysql_query("select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='1' order by outbox.date desc;");
+  $result=mysqli_query($link, "select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='1' order by outbox.date desc");
 
-  if (mysql_num_rows($result)) {
+  if (mysqli_num_rows($result)) {
     print "<table width=\"100%\" height=\"100%\">
 <tr height=20%><td valign=top>
 <div name=\"msglist\" id=\"msglist\"  style=\"height: 150px; overflow: auto; border: 0\">
 <table width=100%>";
-    while ($row=mysql_fetch_object($result)){
+    while ($row=mysqli_fetch_object($result)){
       if (!$hash){
         $hash=$row->hash;
       }
@@ -328,9 +335,9 @@ if ($mode=="areas"){
 ";
 
 
-    $result=mysql_query("select * from `outbox` where hash='$hash';");
-    if (mysql_num_rows($result) or $mode=="new") {
-      $row = mysql_fetch_object($result);
+    $result=mysqli_query($link, "select * from `outbox` where hash='$hash'");
+    if (mysqli_num_rows($result) or $mode=="new") {
+      $row = mysqli_fetch_object($result);
 
       print "
 <table width=100% height=100%>
@@ -359,11 +366,11 @@ if ($mode=="areas"){
 } else {
   $hash=substr($_GET["message"],0,128);
   if ($_GET["action"]=="approve"){
-    mysql_query("update `outbox` set approve='1' where hash='$hash';");
+    mysqli_query($link, "update `outbox` set aprove='1' where hash='$hash'");
   } elseif ($_GET["action"]=="reject") {
-      $result=mysql_query("select * from `outbox` where hash='$hash';");
-      $row=mysql_fetch_object($result);
-      mysql_query("
+      $result=mysqli_query($link, "select * from `outbox` where hash='$hash'");
+      $row=mysqli_fetch_object($result);
+      mysqli_query($link, "
 insert into `outbox`
 set area='NETMAIL', fromname='Sysop', toname='$row->fromname', subject='Письмо не прошло премодерацию', text='
 Привет, $row->fromname!
@@ -376,20 +383,20 @@ FROM: $row->fromname($row->fromaddr)
 TO:   $row->toname($row->toaddr)
 =======================================
 $row->text
-', fromaddr='$mynode', toaddr='$row->fromaddr', origin='Bad robot', reply='', date=now(), hash='".md5(rand())."', sent='0', approve='1';");
+', fromaddr='$mynode', toaddr='$row->fromaddr', origin='Bad robot', reply='', date=now(), hash='".md5(rand())."', sent='0', aprove='1'");
 
-      mysql_query("update `outbox` set sent='1' where hash='$hash';");
+      mysqli_query($link, "update `outbox` set sent='1' where hash='$hash'");
   } elseif ($_GET["action"]=="drop") {
-      mysql_query("update `outbox` set sent='1' where hash='$hash';");
+      mysqli_query($link, "update `outbox` set sent='1' where hash='$hash'");
   }  
-  $result=mysql_query("select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='0' and outbox.approve='0';");
+  $result=mysqli_query($link, "select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='0' and outbox.aprove='0'");
 
-  if (mysql_num_rows($result)) {
+  if (mysqli_num_rows($result)) {
     print "<table width=\"100%\" height=\"100%\">
 <tr height=20%><td valign=top>
 <div name=\"msglist\" id=\"msglist\"  style=\"height: 150px; overflow: auto; border: 0\">
 <table width=100%>";
-    while ($row=mysql_fetch_object($result)){
+    while ($row=mysqli_fetch_object($result)){
       if (!$hash){
         $hash=$row->hash;
       }
@@ -417,9 +424,9 @@ $row->text
 ";
 
 
-    $result=mysql_query("select * from `outbox` where hash='$hash';");
-    if (mysql_num_rows($result) or $mode=="new") {
-      $row = mysql_fetch_object($result);
+    $result=mysqli_query($link, "select * from `outbox` where hash='$hash'");
+    if (mysqli_num_rows($result) or $mode=="new") {
+      $row = mysqli_fetch_object($result);
 
       print "
 <table width=100% height=100%>

@@ -2,7 +2,6 @@
 require ('../config.php');
 require ('lib.php');
 require_once ('JsHttpRequest.php');
-
 // Init JsHttpRequest and specify the encoding. It's important!
 $JsHttpRequest = new JsHttpRequest("koi8-r");
 // Fetch request parameters.

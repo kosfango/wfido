@@ -1,20 +1,20 @@
-<?
-header("Content-type: text/html; charset=koi8-r");
+<? header("Content-type: text/html; charset=koi8-r");
 
 require ('config.php');
 require ('lib/lib.php');
 fix_magic_quotes_gpc();
-
 start_timer();
 
 $hash=substr($_GET["message"],0,128);
 $mode=substr($_GET["mode"],0,128);
 
+if (isset($_POST["subject"])) {
 $subject=$_POST["subject"];
 $reply=$_POST["reply"];
 $toaddr=$_POST["toaddr"];
 $toname=$_POST["toname"];
 //$text=$_POST["text"];
+}
 $text=preg_replace('/\&#8211;/','-',$_POST["text"]);
 if ($_GET["area"]) {
     $area=strtoupper(substr($_GET["area"],0,128));
@@ -28,9 +28,6 @@ if ($_GET["logout"]) {
     logout($_COOKIE['SESSION']);
 }
 
-
-
-
 if ($_GET["login"]) {
     login($_POST["login"],$_POST["password"],$_POST["remember"]);
     exit;
@@ -40,9 +37,9 @@ if ($_GET["login"]) {
     $point=check_session($_COOKIE['SESSION']);
 }
 
-
 //Получаем инфо о юзере
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$query = mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 if ($row->origin) {
@@ -63,19 +60,19 @@ if ($mode=="ansver" and $toname and ($area!="NETMAIL" or $toaddr)){
 //пихаем сообщение в базу, в таблицу outbox.
     if ($permission=="3") { //полный доступ
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
+      mysqli_query($link, "insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1'");
     } elseif ($permission=="2") { //доступ с премодерацией
       $hash=md5(rand());
-      mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
+      mysqli_query($link, "insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0'");
     } elseif ($permission=="4") { //доступ через антиспам
       $hash=md5(rand());
       if (antispam($subject, $text)) { // возможно, спам. отправляем на премодерацию.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='0';");
+        mysqli_query($link, "insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='0'");
       } else { // не спам. отправляем в эху.
-        mysql_query("insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', approve='1';");
+        mysqli_query($link, "insert into `outbox` set area='$area', fromname='$myname', toname='$toname', subject='$subject', text='$text', fromaddr='$myaddr', toaddr='$toaddr', origin='$myorigin', reply='$reply', date=now(), hash='$hash', sent='0', aprove='1'");
       }
     } else { // если права 1 или 0, значит прав на запись нет.
-      mysql_query("
+      mysqli_query($link, "
 insert into `outbox`
 set area='NETMAIL', fromname='Sysop', toname='$fromname', subject='Нет прав на запись в эху', text='
 Привет, $myname!
@@ -89,17 +86,18 @@ TO:   $toname($toaddr)
 =======================================
 $text
 * Origin: $myorigin
-', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', approve='1';");
+', fromaddr='$mynode', toaddr='$myaddr', origin='Bad robot', reply='', date=now(), hash='$hash', sent='0', aprove='1'");
     }
+//    header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: ?area='.$area."&message=".$hash);
 exit;
 } elseif ($mode=="add_to_favorites"){
-  mysql_query("insert ignore into `favorites` set point='$point', message='$hash', uniq_index='$point-$hash';");
+  mysqli_query($link, "insert ignore into `favorites` set point='$point', message='$hash', uniq_index='$point-$hash'");
 } elseif ($mode=="remove_from_favorites"){
-  mysql_query("delete from `favorites` where point='$point' and message='$hash';");
+  mysqli_query($link, "delete from `favorites` where point='$point' and message='$hash'");
 }
   if ($mode=="delete"){
-  mysql_query("delete from `messages` where `hash` = '$hash';");
+  mysqli_query($link, "delete from `messages` where `hash` = '$hash'");
 }
 
 
@@ -141,11 +139,11 @@ if ($use_ajax){
 //Рисуем список эх
 
 //Нетмайл:
-$result=mysql_query("select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area;");
+$result=mysqli_query($link, "select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area");
 
 //считаем количество сообщений
-if (mysql_num_rows($result)){ 
-  $row = mysql_fetch_object($result);
+if (mysqli_num_rows($result)){ 
+  $row = mysqli_fetch_object($result);
   $nummsg = $row->nummsg;
 } else {
   $nummsg="0";
@@ -164,11 +162,11 @@ if ($area=="NETMAIL") {
 print "<p onClick=\"document.location='?area=NETMAIL';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=NETMAIL\"  class=\"netmail\">NETMAIL</a> ($nummsg) $newmessages</p>\n";
 
 //Карбонка:
-$result=mysql_query("select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area!='' and messages.toname='$myname' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date;");
-$result2=mysql_query("select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.fromname='$myname' and messages.area!='' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date;");
-if (mysql_num_rows($result) or mysql_num_rows($result2)){
-  $row = mysql_fetch_object($result);
-  $row2 = mysql_fetch_object($result2);
+$result=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area!='' and messages.toname='$myname' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
+$result2=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.fromname='$myname' and messages.area!='' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
+if (mysqli_num_rows($result) or mysqli_num_rows($result2)){
+  $row = mysqli_fetch_object($result);
+  $row2 = mysqli_fetch_object($result2);
   $nummsg = $row->nummsg + $row2->nummsg;
 } else {
   $nummsg="0";
@@ -187,9 +185,9 @@ if ($area=="CARBONAREA") {
 print "<p onClick=\"document.location='?area=CARBONAREA';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=CARBONAREA\" class=\"carbonarea\">CARBONAREA</a> ($nummsg) $newmessages</p>\n";
 
 //Все остальные эхи:
-$result=mysql_query("select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
-if (mysql_num_rows($result)) {
-  while ($row = mysql_fetch_object($result)) {
+$result=mysqli_query($link, "select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
+if (mysqli_num_rows($result)) {
+  while ($row = mysqli_fetch_object($result)) {
     if ($area==strtoupper($row->area)) {
       $class="selected";
       $newmessages="";
@@ -243,13 +241,13 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
         $hash=get_area_last_message($area);
     }
     print "\n<table width=100%>";
-    $result=mysql_query("select thread from `messages` where hash='$hash';");
+    $result=mysqli_query($link, "select thread from `messages` where hash='$hash'");
     $thread_selected="";
-    if (mysql_num_rows($result)){
-      $row=mysql_fetch_object($result);
+    if (mysqli_num_rows($result)){
+      $row=mysqli_fetch_object($result);
       $thread_selected=$row->thread;
     }
-    $result=mysql_query("
+    $result=mysqli_query($link, "
       select 
         subject, hash, last_author_date as date, unix_timestamp(lastupdate) as rec,
         threads.thread as thread, last_author as fromname, unix_timestamp(last_view_date) as lastview, num 
@@ -267,11 +265,11 @@ if (($mode=="thread" or $mode=="tree") and $area!="OUTBOX" and $area!="CARBONARE
         threads.area='$area'
       order
         by lastupdate desc
-  ;");
+  ");
 
 
     $header_text="&nbsp;";
-    while ($row=mysql_fetch_object($result)){
+    while ($row=mysqli_fetch_object($result)){
       if (!trim($row->subject)) {$row->subject="(no subject)";}
       if ($row->rec>$row->lastview and $row->thread==$thread_selected) {
         $class="newselected";
@@ -305,8 +303,8 @@ $header_text
   if ($permission) {
     //печатаем содержимое треда
     if ($mode=="tree"){
-        $result=mysql_query("select level from `messages` where hash='$hash' and area='$area';");
-        $row = mysql_fetch_object($result);
+        $result=mysqli_query($link, "select level from `messages` where hash='$hash' and area='$area'");
+        $row = mysqli_fetch_object($result);
         $level_first=$row->level;
     } else {// $mode=="thread"
         $level_first=0;
@@ -314,8 +312,8 @@ $header_text
     $print_start=0;
     $thread="";
     $hash_new=""; // если хотя бы одно новое сообщение есть, то запомним его в этой переменной.
-    $result=mysql_query("select messages.msgid as msgid ,messages.reply as reply ,messages.hash,messages.level,messages.date,unix_timestamp(messages.recieved) as rec, messages.fromname,messages.fromaddr,messages.subject,messages.text,messages.thread as thread, unix_timestamp(view_thread.last_view_date) as lastview from `messages` left join `view_thread` on (messages.thread=view_thread.thread and view_thread.point='$point' and view_thread.area='$area') where messages.thread = (select thread from `messages` where hash='$hash') and messages.area='$area' order by inthread;");
-    while ($row = mysql_fetch_object($result)){
+    $result=mysqli_query($link, "select messages.msgid as msgid ,messages.reply as reply ,messages.hash,messages.level,messages.date,unix_timestamp(messages.recieved) as rec, messages.fromname,messages.fromaddr,messages.subject,messages.text,messages.thread as thread, unix_timestamp(view_thread.last_view_date) as lastview from `messages` left join `view_thread` on (messages.thread=view_thread.thread and view_thread.point='$point' and view_thread.area='$area') where messages.thread = (select thread from `messages` where hash='$hash') and messages.area='$area' order by inthread");
+    while ($row = mysqli_fetch_object($result)){
       $thread=$row->thread;
       $class="thread";
       $display="none";
@@ -365,7 +363,7 @@ $header_text
 
 
       //создаем временную таблицу для всех откарбоненных писем
-      mysql_query("CREATE temporary TABLE `tmp` (
+      mysqli_query($link, "CREATE temporary TABLE `tmp` (
           `fromname` varchar(255) NOT NULL default '',
           `fromaddr` text NOT NULL,
           `toname` varchar(255) NOT NULL default '',
@@ -377,13 +375,13 @@ $header_text
           `reply` varchar(128) NOT NULL default '',
 	  `hash` varchar(64) NOT NULL default '',
           `recieved` datetime NOT NULL default '0000-00-00 00:00:00'
-	) CHARSET=utf8;" );
+	) CHARSET=utf8" );
 
       //карбоним в нее сообщения
-      mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
+      mysqli_query($link, "insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
                                from `messages` where toname='$myname' and area!='NETMAIL' and area!=''");
-      mysql_query("insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
+      mysqli_query($link, "insert into `tmp` (`fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`)
                                select `fromname`, `fromaddr`, `toname`, `toaddr`, `area`, `subject`, `date`,`msgid`, `reply`, `hash`, `recieved`
                                from `messages` where fromname='$myname' and area!='NETMAIL' and area!=''");
 
@@ -398,18 +396,18 @@ $header_text
       $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `messages` where area='$area' order by id desc";
 #      $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `messages` where area='$area'";
     }
-
-    $row=mysql_fetch_object(mysql_query("select `limit` from `users` where `point`='$point';"));
+    $query2=mysqli_query($link, "select `limit` from `users` where `point`='$point'");
+    $row=mysqli_fetch_object($query2);
     $user_limit=$row->limit;
     if ($user_limit) {
       $query=$query." limit $user_limit ;";
     } else {
       $query=$query." ;";
     }
-    $result=mysql_query($query);
-    if (mysql_num_rows($result)) {
+    $result=mysqli_query($link, $query);
+    if (mysqli_num_rows($result)) {
       print "<table width=100%>\n";
-      while ($row = mysql_fetch_object($result)) {
+      while ($row = mysqli_fetch_object($result)) {
         //если не указано, какое именно письмо нас интересует, то выбираем последнее просмотренное.
         //если последнее просмотренное не указано, то показывать будем первое же письмо
         if (!$hash and $last_viewed_message_hash) {
@@ -518,9 +516,9 @@ $header_text
     } else {
       $query="select * from `messages` where hash='$hash';";
     }
-    $result=mysql_query($query);
-    if (mysql_num_rows($result) or $mode=="new") {
-      $row = mysql_fetch_object($result);
+    $result=mysqli_query($link, $query);
+    if (mysqli_num_rows($result) or $mode=="new") {
+      $row = mysqli_fetch_object($result);
 
 //доделать: рисовать в шапке "new" и "reply" только в том случае, если права на запись в эху есть.
 
@@ -545,6 +543,7 @@ $header_text
           print "<a href=\"?area=FAVORITES&message=$row->hash&mode=remove_from_favorites\"><img src=\"images/delete_from_favorites.gif\" alt=\" delete from favorites\" title=\"delete from favorites\"  width=16 height=16 border=0></a> ";
         }
           if ($area=="NETMAIL"){
+//          print "<a href=\"?area=".rawurlencode($row->area)."&message=$row->hash&mode=delete\">delete</a>";
 	    print "<a href=\"?area=".rawurlencode($row->area)."&message=$row->hash&mode=delete\"><img src=\"images/trash.gif\" alt=\" delete message\" title=\"delete message\"  width=16 height=16 border=0></a> ";
         }
       }
@@ -592,7 +591,7 @@ To:<input type=text name=toname value=\"All\">";
 <tr height=1%><td class=\"messagehead\">&nbsp;</td></tr>
 <tr height=1%><td colspan=2 class=\"messagehead\" align=right>";
       if ($area!="CARBONAREA" and $area!="OUTBOX"){
-        print " <a href=\"?area=$area&mode=new\">new</a>";
+        print " <a href=\"?area=$area&mode=new\"><img src=\"images/new.gif\" width=16 height=16 border=0 alt=\"new message\" title=\"new\"></a>";
       } else {
         print "&nbsp;";
       }
