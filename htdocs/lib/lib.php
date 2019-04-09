@@ -1,9 +1,8 @@
 <?
-
 function connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass){
-    mysql_connect($sql_host, $sql_user, $sql_pass) or die("Couldn't connect to mysql server");
-    mysql_select_db($sql_base) or die("Couldn't connect to database");
-    mysql_query("set names koi8r;");
+      global $link;
+      $link = mysqli_connect($sql_host, $sql_user, $sql_pass, $sql_base) or die();
+      $query=mysqli_query($link, "set names koi8r");
 }
 
 //Заэкранировать все спецсимволы в массиве
@@ -59,7 +58,7 @@ global $_GET,$_POST,$_COOKIE;
 */
 
 function check_session($sessionid) {
-global $area,$hash,$webroot;
+global $area,$hash,$webroot,$link;
 // echo __FUNCTION__;echo "<pre>";var_dump($_SERVER);exit;
 
     $browser=md5($_SERVER["HTTP_USER_AGENT"]
@@ -68,12 +67,13 @@ global $area,$hash,$webroot;
 //    		. $_SERVER["HTTP_ACCEPT_ENCODING"]
 //		. $_SERVER["HTTP_ACCEPT_CHARSET"]
 	);
-    $result=mysql_query("SELECT point FROM `sessions` WHERE `sessionid`='$sessionid' and `browser`='$browser' and `active`=1");
+    $result=mysqli_query($link, "SELECT point FROM `sessions` WHERE `sessionid`='$sessionid' and `browser`='$browser' and `active`=1");
 
-    if (mysql_num_rows($result)==1) {
-	$row=mysql_fetch_object($result);
+    if (mysqli_num_rows($result)==1) {
+	$row=mysqli_fetch_object($result);
 	return $row->point;
     }else {
+//	header ('HTTP/1.1 301 Moved Permanently');
 	header ('Location: '.$webroot.'/?login=1&area=' . urlencode($area).'&message='.$hash);
 	exit;
     }
@@ -81,13 +81,12 @@ global $area,$hash,$webroot;
 
 
 function login($point,$password,$remember){
-global $sessionid,$mynode,$area,$hash,$webroot;
+global $sessionid,$mynode,$area,$hash,$webroot,$link;
 
   if ($point or $password) {
 	if ($point and $password and check_password($point,$password)) {
 	
 	    if(!session_id()) session_start();
-	    
 	    if ($_COOKIE['SESSION']) {
 		$sessionid=$_COOKIE['SESSION'];
 	    } else {
@@ -109,11 +108,14 @@ global $sessionid,$mynode,$area,$hash,$webroot;
 			    );
 			
     	    $ip=$_SERVER["REMOTE_ADDR"];
-	    $row=mysql_fetch_object(mysql_query("select `close_old_session` from `users` where `point`='$point'"));
+	    $query=mysqli_query($link, "select `close_old_session` from `users` where `point`='$point'");
+	    $row=mysqli_fetch_object($query);
+	    // var_dump($row);
 	    if ($row->close_old_session) {
-    		mysql_query ("UPDATE `sessions` SET `active`=0 WHERE `point`='$point' or `sessionid`='$sessionid'");
+    		mysqli_query($link, "UPDATE `sessions` SET `active`=0 WHERE `point`='$point' or `sessionid`='$sessionid'");
 	    }
-    	    mysql_query ("INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
+    	    mysqli_query($link, "INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
+//	    header ('HTTP/1.1 301 Moved Permanently');
     	    header ('Location: '.$webroot.'/?area='.urlencode($area).'&message='.$hash);
     	    exit;
 	} else {
@@ -148,7 +150,8 @@ global $sessionid,$mynode,$area,$hash,$webroot;
    <table>
   '.$error.'
   <font size=-1 color=red>Ваш браузер должен поддерживать cookies.</font><br>
-  <a href="register.php">Зарегистрироваться.</a>
+  <a href="register.php">Зарегистрироваться.</a><br>
+  <a href="reset_password.php">Забыли пароль?</a>
    ';
     print '</td>
  </tr>
@@ -160,19 +163,24 @@ global $sessionid,$mynode,$area,$hash,$webroot;
 }
 
 function check_password($point, $password) {
+    global $link;
     if ($point and $password) {
-        return mysql_num_rows(mysql_query("SELECT * from `users` WHERE point='$point' and password='$password' and active='1';"));
+    $res = mysqli_query($link, "SELECT * from `users` WHERE point='$point' and password='$password' and active='1'");
+    $row = mysqli_num_rows($res);
+    return $row;
     }
 }
 
 function logout($sessionid) {
-global $point,$webroot;
-    mysql_query ("UPDATE `sessions` SET active=0 WHERE sessionid='$sessionid'");
+global $point,$webroot, $link;
+    mysqli_query($link,"UPDATE `sessions` SET active=0 WHERE sessionid='$sessionid'");
+//    header ('HTTP/1.1 301 Moved Permanently');
     header ('Location: '.$webroot.'/');
 }
 
 
 function message2html($text){
+    global $link;
     $pre="code";
     $br="<br>";
     $return="";
@@ -294,32 +302,34 @@ function txt2html($text){
 
 
 function set_area_last_view($area,$hash){
-    global $point;
+    global $point, $link;
     $query="replace into `view` set point='$point', area='$area', last_view_date=NOW()";
     if ($hash) {
 	$query=$query . ", last_view_message='$hash'";
     } else {
-	$result=mysql_query("select last_view_message from `view` where point='$point' and area='$area';");
-	if (mysql_num_rows($result)){
-    	    $row=mysql_fetch_object($result);
+	$result=mysqli_query($link, "select last_view_message from `view` where point='$point' and area='$area'");
+	if (mysqli_num_rows($result)){
+    	    $row=mysqli_fetch_object($result);
     	    $query=$query . ", last_view_message=$row->last_view_message";
         }
     }
-    mysql_query($query);
+    mysqli_query($link, $query);
 }
 
 function get_area_last_view($area){
-    global $point;
-    $row=mysql_fetch_object(mysql_query("select unix_timestamp(last_view_date) as date from `view` where point='$point' and area='$area';"));
+    global $point, $link;
+    $query=mysqli_query($link, "select unix_timestamp(last_view_date) as date from `view` where point='$point' and area='$area'");
+    $row=mysqli_fetch_object($query);
     return $row->date;
 }
 
 
 function get_area_last_message($area){
-    global $point;
-    $row=mysql_fetch_object(mysql_query("select last_view_date,last_view_message from `view` where point='$point' and area='$area';"));
+    global $point, $link;
+    $query=mysqli_query($link, "select last_view_date,last_view_message from `view` where point='$point' and area='$area'");
+    $row=mysqli_fetch_object($query);
     $last_hash=$row->last_view_message;
-    if (mysql_num_rows(mysql_query("select * from `messages` where hash='$last_hash';"))){
+    if (mysqli_num_rows(mysqli_query($link, "select * from `messages` where hash='$last_hash'"))){
       return $last_hash;
     } else {
       return 0;
@@ -328,13 +338,13 @@ function get_area_last_message($area){
 
 
 function get_area_permissions($area){
-    global $point;
+    global $point, $link;
     if (!$area){
       $area="NETMAIL";
     }
-    $result=mysql_query("select user_groups.perm from area_groups left join user_groups on (user_groups.group=area_groups.group) where area='$area' and point='$point';");
-    if (mysql_num_rows($result)){
-      $row=mysql_fetch_object($result);
+    $result=mysqli_query($link, "select user_groups.perm from area_groups left join user_groups on (user_groups.group=area_groups.group) where area='$area' and point='$point'");
+    if (mysqli_num_rows($result)){
+      $row=mysqli_fetch_object($result);
       return $row->perm;
     } else {
       return 0;
@@ -342,22 +352,24 @@ function get_area_permissions($area){
 }
 
 function set_thread_last_view($area,$thread){
-    global $point;
+    global $point, $link;
     $query="replace into `view_thread` set point='$point', area='$area', thread='$thread', last_view_date=NOW()";
-    mysql_query($query);
+    mysqli_query($link, $query);
 }
 
 function get_thread_last_view($area,$thread){
-    global $point;
-    $row=mysql_fetch_object(mysql_query("select unix_timestamp(last_view_date) as date from `view_thread` where point='$point' and area='$area' and thread='$thread';"));
+    global $point, $link;
+    $query=mysqli_query($link, "select unix_timestamp(last_view_date) as date from `view_thread` where point='$point' and area='$area' and thread='$thread'");
+    $row=mysqli_fetch_object($query);
     return $row->date;
 }
 
 
 function get_hash_by_msgid($msgid,$area){
-    $result=mysql_query("select hash from `messages` where area='$area' and msgid='$msgid';");
-    if (mysql_num_rows($result)){
-      $row=mysql_fetch_object($result);
+    global $link;
+    $result=mysqli_query($link, "select hash from `messages` where area='$area' and msgid='$msgid'");
+    if (mysqli_num_rows($result)){
+      $row=mysqli_fetch_object($result);
       return $row->hash;
     } else {
       return 0;
@@ -371,13 +383,15 @@ function start_timer(){
     $start_time = $start_array[1] + $start_array[0];
 }
 function stop_timer(){
-    global $start_time;
+    global $start_time, $link;
     $end_time = microtime();
     $end_array = explode(" ",$end_time);
     $end_time = $end_array[1] + $end_array[0];
     $time = $end_time - $start_time;
-    $row=mysql_fetch_object(mysql_query("select count(*) as a from `messages`"));
-    $row2=mysql_fetch_object(mysql_query("select count(*) as a from `areas`"));
+    $query=mysqli_query($link, "select count(*) as a from `messages`");
+    $row=mysqli_fetch_object($query);
+    $query2=mysqli_query($link, "select count(*) as a from `areas`");
+    $row2=mysqli_fetch_object($query2);
     return "Страница сгенерирована за $time секунд. $row->a сообщений в $row2->a конференциях.";
 }
 
@@ -386,11 +400,14 @@ function fix_post(){
 // Эта функция лечит его от этой болезни. Но требует включения always_populate_raw_post_data в php.ini
     global $_POST, $HTTP_RAW_POST_DATA;
     $request=explode("&", $HTTP_RAW_POST_DATA);
+ if (isset($_POST['1'])) 
+  { 
     $_POST=array();
     foreach ($request as $string){
       list($key, $value)=explode("=", $string);
       $_POST[urldecode($key)]=urldecode($value);
     }
+  }
 }
 
 function planka($page){
@@ -469,11 +486,11 @@ function external_links($return) {
 	$return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
 	$url = parse_url($arr[0]);
 	$point=check_session($_COOKIE['SESSION']);
-	$row=mysql_fetch_object(mysql_query("select `scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'"));
+	$row=customisation_display($point);
 	if (!$row->media_disabled)
 	{		
 		// images
-		if(preg_match('#\.(png|jpg|gif|jpeg)$#', $url['path']))
+		if(preg_match('#\.(png|jpg|gif|jpeg)$#i', $url['path']))
 		{
 			if ($row->scale_img) { 
 				return '<img class=ext-image onclick="zoomzoom(this);" src="'.$arr[0] . '" width="'.$row->scale_value.'" />';
@@ -498,15 +515,50 @@ function external_links($return) {
     return $return;
 }
 
+function customisation_display($point) {
+global $link;
+$query=mysqli_query($link, "select `scale_img`,`scale_value`,`media_disabled` from `users` where `point`='$point'");
+$row=mysqli_fetch_object($query);
+return $row;
+}
+
 function get_info_by_id($id){
-    $result=mysql_query("select date,hash,fromname,area,subject from `messages` where id='$id';");
-    if (mysql_num_rows($result)){
-      $row=mysql_fetch_object($result);
+global $link;
+    $result=mysqli_query($link, "select date,hash,fromname,area,subject from `messages` where id='$id'");
+    if (mysqli_num_rows($result)){
+      $row=mysqli_fetch_object($result);
       return $row;
     } else {
       return 0;
     }
 }
 
+function getRealInput($source) {
+    $pairs = explode("&", $source == 'POST' ? file_get_contents("php://input") : $_SERVER['QUERY_STRING']);
+    $vars = array();
+    foreach ($pairs as $pair) {
+        $nv = explode("=", $pair);
+        $name = urldecode($nv[0]);
+        $value = urldecode($nv[1]);
+        $vars[$name] = $value;
+    }
+    return $vars;
+}
+// Wrapper functions specifically for GET and POST:
+//function getRealGET() { return getRealInput('GET'); }
+//function getRealPOST() { return getRealInput('POST'); }
+
+function domain_exists($email, $record = 'MX'){
+    list($user, $domain) = explode('@', $email, 2);
+    return checkdnsrr($domain, $record);
+}
+
+function check_email($email){
+global $link;
+$select = mysqli_query($link, "SELECT `email` FROM `users` WHERE `email` = '".$email."'") or exit(mysqli_error($link));
+if(mysqli_num_rows($select)) {
+    return 1;
+}
+}
 
 ?>
