@@ -2,7 +2,7 @@
 
 require ('config.php');
 require ('lib/lib.php');
-
+require ('lib/sphinxapi.php');
 start_timer();
 
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
@@ -21,7 +21,8 @@ if(!$page) {
 
 $result_on_page=30;
 
-$row = mysqli_fetch_object(mysqli_query($link, "select * from `users` where point='$point'"));
+$query = mysqli_query($link, "select * from `users` where point='$point'");
+$row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
@@ -58,7 +59,7 @@ if ($area){
   print "<option value='' selected>All areas\n";
 }
 
-$result=mysqli_query($link, "select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
+$result=mysqli_query($link, "select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
 while ($row=mysqli_fetch_object($result)) {
   $selected="";
   if ( strtoupper($area)==$row->area) {
@@ -74,22 +75,36 @@ print "</select>
 
 if ($string){
 
-//  $query="select SQL_CALC_FOUND_ROWS upper(area) as area,hash,fromname,date,subject,match(text) against ('$string' IN BOOLEAN MODE) as score from messages where match (text) against ('$string' IN BOOLEAN MODE)";
-  $query="select SQL_CALC_FOUND_ROWS upper(area) as area,hash,fromname,date,subject,match(text) against ('$string') as score from messages where match (text) against ('$string')";
+  $search=new SphinxClient();
+  $search->SetServer( $sphinx_host, $sphinx_port );
+  $search->SetMatchMode(SPH_MATCH_EXTENDED2);
+  $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
   if ($area) {
-    $query=$query." and area='$area'";
-  } else {
-    $query=$query. " and area!=''";
+    $query = mysqli_query($link, "select CRC32('".strtoupper($area)."') as area32");
+    $area32=mysqli_fetch_object($query)->area32;
+    $search->SetFilter('area32',array($area32));
   }
-  $limit=($page-1)*$result_on_page;
-  $query=$query." order by id desc limit $limit,$result_on_page;";
-  $result=mysqli_query($link, $query);
-  if (mysqli_num_rows($result)){
-    $result2=mysqli_query($link, "select found_rows() as num;");
-    $row2=mysqli_fetch_object($result2);
-    print "Найдено $row2->num результатов<br>\n";
-    $pages=(integer)($row2->num/$result_on_page);
-    if($row2->num%$result_on_page){
+  $offset=($page-1)*$result_on_page;
+  $max_matches=$offset+$result_on_page;
+  $search->SetLimits($offset,$result_on_page,$max_matches);
+
+  $words= preg_split("/[\s,]+/",$string);
+  $search_string="@text ";
+  foreach ($words as $word){
+    if ($word[0]=="Н" or $word[0]=='н'){
+      $Hword=$word;
+      $Hword[0]="h";
+      $search_string .= " ( $word | $Hword ) ";
+    } else {
+      $search_string .= " $word ";
+    }
+  }
+
+  $result = $search->Query( mb_convert_encoding($search_string, 'UTF-8', 'KOI8-R'), "messages delta");
+  if ( !empty($result["matches"]) ) { 
+    print "Найдено ".$result['total_found']." результатов<br>\n";
+    $pages=(integer)($result['total_found']/$result_on_page);
+    if($result['total_found']%$result_on_page){
       $pages++;
     }
     $pages_line="";
@@ -108,8 +123,9 @@ if ($string){
       }
     }
     print "$pages_line<br>\n<div style='width: 100%; text-align: left;'>\n";
-    while ($row=mysqli_fetch_object($result)){
-      if (!$row->subject){
+    foreach ( $result["matches"] as $id => $info ) {
+      $row=get_info_by_id($id);
+        if (!$row->subject){
         $row->subject="(no subject)";
       }
       print "$row->fromname: <a href='index.php?area=$row->area&message=$row->hash'>$row->subject</a><br>\n$row->date, $row->area<br><br>\n";
