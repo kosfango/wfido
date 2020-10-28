@@ -365,7 +365,7 @@ if (isset($_POST['save']))
 
 } else {
   $hash=substr($_GET["message"],0,128);
-  if ($_GET["action"]=="approve"){
+  if ($_GET["action"]=="aprove"){
     mysqli_query($link, "update `outbox` set aprove='1' where hash='$hash'");
   } elseif ($_GET["action"]=="reject") {
       $result=mysqli_query($link, "select * from `outbox` where hash='$hash'");
@@ -434,7 +434,7 @@ $row->text
 <td class=\"messagehead\" width=\"33%\">To: $row->toname ($row->toaddr)</td>
 <td class=\"messagehead\" width=\"33%\">Date: $row->date</td>
 <tr height=1%><td colspan=2 class=\"messagehead\">Subject: $row->subject</td>
-<td align=right class=\"messagehead\"><a href='?mode=moder&message=$row->hash&action=approve'>approve</a> <a href='?mode=moder&message=$row->hash&action=drop'>drop</a> <a href='?mode=moder&message=$row->hash&action=reject'>reject</a></td>
+<td align=right class=\"messagehead\"><a href='?mode=moder&message=$row->hash&action=aprove'>aprove</a> <a href='?mode=moder&message=$row->hash&action=drop'>drop</a> <a href='?mode=moder&message=$row->hash&action=reject'>reject</a></td>
 <tr height=98%><td colspan=3 class=\"message\" valign=top>";
       $text=explode("\n", $row->text);
       print message2html($text);
