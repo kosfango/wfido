@@ -21,7 +21,7 @@ if(!$page) {
 
 $result_on_page=30;
 
-$row = mysql_fetch_object(mysql_query("select * from `users` where point='$point'"));
+$row = mysqli_fetch_object(mysqli_query($link, "select * from `users` where point='$point'"));
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
 
@@ -58,8 +58,8 @@ if ($area){
   print "<option value='' selected>All areas\n";
 }
 
-$result=mysql_query("select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
-while ($row=mysql_fetch_object($result)) {
+$result=mysqli_query($link, "select upper(areas.area) as area from `areas` join `subscribe` where subscribe.area=areas.area and subscribe.point='$point' order by areas.area;");
+while ($row=mysqli_fetch_object($result)) {
   $selected="";
   if ( strtoupper($area)==$row->area) {
     $selected=" selected";
@@ -83,10 +83,10 @@ if ($string){
   }
   $limit=($page-1)*$result_on_page;
   $query=$query." order by id desc limit $limit,$result_on_page;";
-  $result=mysql_query($query);
-  if (mysql_num_rows($result)){
-    $result2=mysql_query("select found_rows() as num;");
-    $row2=mysql_fetch_object($result2);
+  $result=mysqli_query($link, $query);
+  if (mysqli_num_rows($result)){
+    $result2=mysqli_query($link, "select found_rows() as num;");
+    $row2=mysqli_fetch_object($result2);
     print "Найдено $row2->num результатов<br>\n";
     $pages=(integer)($row2->num/$result_on_page);
     if($row2->num%$result_on_page){
@@ -108,7 +108,7 @@ if ($string){
       }
     }
     print "$pages_line<br>\n<div style='width: 100%; text-align: left;'>\n";
-    while ($row=mysql_fetch_object($result)){
+    while ($row=mysqli_fetch_object($result)){
       if (!$row->subject){
         $row->subject="(no subject)";
       }
