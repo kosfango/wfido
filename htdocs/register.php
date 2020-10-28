@@ -89,7 +89,7 @@ if(md5($_POST['captcha']) == @$_COOKIE[CAPTCHA_COOKIE] and !empty($_POST['email'
     <tr><td>Email:</td><td><input name=email type=text value='$email'></td></tr>
     <tr><td>Пароль:</td><td><input name=password type=password value=''></td></tr>
     <tr><td>Пароль (еще раз):</td><td><input name=password2 type=password value=''></td></tr>
-    <tr><td>Введите код с картинки:</td><td><input name=captcha type=text value='$captcha'> </td><td><img title=\"Щелкните для изменения кода\" alt=\"Captcha\" src=\"jcaptcha.php\" style=\"border: 1px solid black\" onclick=\"this.src='jcaptcha.php?id=' + (+new Date());\"></td></td></tr>
+    <tr><td><img title=\"Щелкните для изменения кода\" alt=\"Captcha\" src=\"jcaptcha.php\" style=\"border: 1px solid black\" onclick=\"this.src='jcaptcha.php?id=' + (+new Date());\"></td><td><input name=captcha type=text placeholder='Введите код с картинки' value='$captcha'> </td></tr>
     <tr><td></td><td>$error</td></tr>
 	<tr><td colspan=2 align=center><input type=submit value='Зарегистрироваться'></td></tr>
 	</table>

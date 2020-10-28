@@ -482,13 +482,26 @@ function type_style($string){
   return $string;
 }
 
+function convertYoutube($string) {
+                    return preg_replace(
+                    "#\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)#i",
+                //"/[http(s)]*:\/\/[www.]*you[\D]*[\S]*/i",
+                //"/[http(s)]*:\/\/[www.]*you[\D]*[\w]*/i",
+                //"#<a (?:.*?)href=["\\\']http[s]?:\/\/(?:[^\.]+\.)*youtube\.com\/(?:v\/|watch\?(?:.*?\&)?v=|embed\/)([\w\-\_]+)["\\\']#ixs",
+                //    "<iframe src=\"//www.youtube.com/embed/$2\" allowfullscreen></iframe>",
+                     "<iframe class=\"ext-video\" src=\"//www.youtube.com/embed/$2\" allowfullscreen></iframe>",
+                     $string
+                    );
+                }
+
+
 function external_links($return) {
 	$return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
 	$url = parse_url($arr[0]);
 	$point=check_session($_COOKIE['SESSION']);
 	$row=customisation_display($point);
 	if (!$row->media_disabled)
-	{		
+	{
 		// images
 		if(preg_match('#\.(png|jpg|gif|jpeg)$#i', $url['path']))
 		{
@@ -501,6 +514,15 @@ function external_links($return) {
 			}
 		}
 		// youtube
+		//$var4=$arr[0];
+		//var_dump($var4);
+		if(preg_match("/\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)/i", $arr[0])) 
+		{
+		//$var5=convertYoutube($arr[0]);
+		return sprintf(convertYoutube($arr[0]));
+		//var_dump($var5);
+		}
+/*
 		if(in_array($url['host'], array('www.youtube.com', 'youtube.com'))
 			&& $url['path'] == '/watch'
 			&& isset($url['query']))
@@ -508,7 +530,8 @@ function external_links($return) {
 			parse_str($url['query'], $query);
 			return sprintf('<iframe class="ext-video" src="https://www.youtube.com/embed/%s" allowfullscreen></iframe>', $query['v']);
 		}
-	}	
+*/
+	}
 	//links
 	return sprintf('<a target="_blank" href="safe_open.php?%1$s">%1$s</a>', $arr[0]);
     }, $return);
