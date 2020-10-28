@@ -19,7 +19,7 @@ $dbh = DBI->connect("DBI:mysql:$sql_base;host=$sql_host", $sql_user,$sql_pass );
 $sth = $dbh -> prepare ("set names cp866;");
 $sth -> execute;
 
-$sth = $dbh->prepare("SELECT id, fromname, toname, subject, text, fromaddr, toaddr, origin, area, reply, unix_timestamp(date) as timeshtamp FROM outbox where sent='0' and approve='1';");
+$sth = $dbh->prepare("SELECT id, fromname, toname, subject, text, fromaddr, toaddr, origin, area, reply, unix_timestamp(date) as timeshtamp FROM outbox where sent='0' and aprove='1';");
 $sth->execute();
 while (my $ref = $sth->fetchrow_hashref()) {
     print "$ref->{'fromname'} ($ref->{'fromaddr'}) - $ref->{'area'}\n";
