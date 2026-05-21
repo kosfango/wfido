@@ -25,27 +25,38 @@
     }
 
     function show_or_hide_arealist() {
-	if (document.getElementById('arealist').style.display == 'none'){
-	    document.getElementById('arealist').style.height=document.body.offsetHeight-23;
-	    document.getElementById('arealist').style.display='block';
-            document.getElementById('plankaecho').innerHTML =  document.variables.area.value + '<img src="images/loading.gif" width=16 height=16>';
-	    JsHttpRequest.query(
-        	'lib/get_areas.php',
-        	{
-            	    'area': document.variables.area.value,
-            	    'mode': document.variables.mode.value
-        	},
-        	function(result, errors) {
-        	    if (result) {
-                	document.getElementById('arealist-container').innerHTML =  result['text'];
-        		document.getElementById('plankaecho').innerHTML =  document.variables.area.value + '<img src="images/expand.gif" height=16 width=16>';
-            	    }
-        	},
-        	true
-    	    );
-	} else {
-	    document.getElementById('arealist').style.display='none';
-	}
+        var arealist = document.getElementById('arealist');
+        var container = document.getElementById('arealist-container');
+        var plankaecho = document.getElementById('plankaecho');
+
+        if (!arealist || !container || !plankaecho || !document.variables) {
+            return;
+        }
+
+        if (arealist.style.display == 'none'){
+            arealist.style.height = (document.body.offsetHeight - 23) + 'px';
+            arealist.style.display = 'block';
+            container.innerHTML = 'Loading...';
+            plankaecho.innerHTML = document.variables.area.value + '<img src="images/loading.gif" width=16 height=16>';
+            JsHttpRequest.query(
+                'lib/get_areas.php',
+                {
+                    'area': document.variables.area.value,
+                    'mode': document.variables.mode.value
+                },
+                function(result, errors) {
+                    if (result && typeof result['text'] != 'undefined') {
+                        container.innerHTML = result['text'];
+                    } else if (errors) {
+                        container.innerHTML = '<div style="padding: 4px;">Failed to load area list</div>';
+                    }
+                    plankaecho.innerHTML = document.variables.area.value + '<img src="images/expand.gif" height=16 width=16>';
+                },
+                true
+            );
+        } else {
+            arealist.style.display = 'none';
+        }
     }
 
 

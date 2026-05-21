@@ -144,7 +144,7 @@ print "</td></tr>
 //print "<span onclick=\"update_list(document.variables.area.value,document.variables.hash.value,document.variables.mode.value)\";>update</span>";
 
 if ($use_ajax){
-  print '<div name=arealist id=arealist class=arealist style="height: 400px; width: 200px; overflow: auto; border: 1; position: absolute; left: 0px; top: 20px; display: none"><div class="arealist-container" id="arealist-container"></div>';
+  print '<div name=arealist id=arealist class=arealist style="height: 400px; width: 200px; overflow: auto; border: 1px solid #999; position: absolute; left: 0px; top: 20px; display: none; z-index: 9999; background: #fff;"><div class="arealist-container" id="arealist-container"></div></div>';
 }
 else {
   print "<td valign=top width=150px class=\"echolist\">
@@ -713,9 +713,9 @@ function show_gen_time() {
 </script>";
 ?>
 
-<script src="lib/JsHttpRequest.js"></script>
-<script src="lib/lib.js"></script>
-<script src="lib/periodicalExecuter.js"></script>
+<script src="lib/JsHttpRequest.js?v=<?php echo filemtime('lib/JsHttpRequest.js'); ?>"></script>
+<script src="lib/lib.js?v=<?php echo filemtime('lib/lib.js'); ?>"></script>
+<script src="lib/periodicalExecuter.js?v=<?php echo filemtime('lib/periodicalExecuter.js'); ?>"></script>
 </div>
 </body>
 <html>

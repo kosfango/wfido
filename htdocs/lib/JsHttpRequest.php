@@ -63,6 +63,11 @@ class JsHttpRequest
      * If an object is created WITHOUT an active AJAX query, it is simply marked as
      * non-active. Use statuc method isActive() to check.
      */
+    function __construct($enc)
+    {
+        $this->JsHttpRequest($enc);
+    }
+
     function JsHttpRequest($enc)
     {
         global $JsHttpRequest_Active;
