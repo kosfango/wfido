@@ -497,4 +497,5 @@ img.ext-image {
 
 img.ext-image-zoom {
  cursor: crosshair;
+ width: auto !important;
 }
