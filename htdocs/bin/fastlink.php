@@ -216,7 +216,7 @@ function set_thread($thread_info,$msgid=0,$level=0){
   $thread_info['num']++;
   if ($level) { //иногда случается, что письмо приходит раньше ответа. и в этом случае ответ уже может быть отдельным тредом.
                 // так что имеет смысл принудительно убивать треды, образованные от всех писем, у которых level>0
-    mysqli_query($link, "delete from thread where area=\"".$thread_info['area']."\" and thread=\"$msgid\";");
+    mysqli_query($link, "delete from threads where area=\"".$thread_info['area']."\" and thread=\"$msgid\";");
   }
   $result=mysqli_query($link, "select msgid,recieved,date,fromaddr,fromname,hash,subject from `tmp` where reply=\"$msgid\" order by recieved;");
   while ($row=mysqli_fetch_object($result)){

@@ -7,13 +7,18 @@ start_timer();
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 fix_post();
-$point=check_session($_COOKIE['SESSION']);
-$mode=substr($_GET["mode"],0,128);
+$point=check_session($_COOKIE['SESSION'] ?? '');
+$mode=substr($_GET["mode"] ?? "",0,128);
 
 $query = mysqli_query($link, "select * from `users` where point='$point'");
 $row = mysqli_fetch_object($query);
 $myaddr=$mynode.".".$row->point;
 $myname=$row->name;
+
+$error="";
+$oldpassword="";
+$newpassword="";
+$newpassword2="";
 
 
 
@@ -61,7 +66,7 @@ print "
 if ($mode=="my"){
 
 
-  if ($_POST['save']){
+  if (isset($_POST['save'])){
     mysqli_query($link, "update `users` set `origin`='".$_POST['origin']."', `name`='".$_POST['name']."', `email`='".$_POST['email']."' where `point`='$point'");
     if ($_POST['newpassword'] and $_POST['newpassword']==$_POST['newpassword2']){
       if (mysqli_num_rows(mysqli_query($link, "select * from `users` where `password`='".$_POST['oldpassword']."' and `point`='$point'"))){
@@ -96,7 +101,7 @@ if ($mode=="my"){
 
 
 } elseif ($mode=="other") {
-  if ($_POST['save']){
+  if (isset($_POST['save'])){
     if ($_POST['close_old_session']){
       $_POST['close_old_session']=1;
     }else {
@@ -156,7 +161,7 @@ if ($mode=="my"){
    <table>
    </form>";
 } else {
-  if ($_POST['save']){
+  if (isset($_POST['save'])){
     mysqli_query($link, "delete from `subscribe` where `point`='$point'");
     foreach (getRealInput('POST') as $key=>$value) {
       if (substr($key,0,5)=="subs-"){
@@ -169,7 +174,7 @@ if ($mode=="my"){
    <form method=post action=\"?mode=areafix\">
    <table width=100% border=0>";
 
-  if ($_GET['order']=="messages"){
+  if (($_GET['order'] ?? "")=="messages"){
     $order="areas.messages desc";
   } else {
     $order="areas.area";

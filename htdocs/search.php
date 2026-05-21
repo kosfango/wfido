@@ -8,11 +8,11 @@ start_timer();
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 fix_post();
-$point=check_session($_COOKIE['SESSION']);
+$point=check_session($_COOKIE['SESSION'] ?? '');
 
-$area=substr($_GET["area"],0,128);
-$page=substr($_GET["page"],0,128);
-$string=substr($_GET["string"],0,256);
+$area=substr($_GET["area"] ?? "",0,128);
+$page=substr($_GET["page"] ?? "",0,128);
+$string=substr($_GET["string"] ?? "",0,256);
 
 
 if(!$page) {
@@ -79,6 +79,7 @@ if ($string){
   $search->SetServer( $sphinx_host, $sphinx_port );
   $search->SetMatchMode(SPH_MATCH_EXTENDED2);
   $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
+//  $search->SetSortMode( SPH_SORT_TIME_SEGMENTS, 'msg' );
   if ($area) {
     $query = mysqli_query($link, "select CRC32('".strtoupper($area)."') as area32");
     $area32=mysqli_fetch_object($query)->area32;

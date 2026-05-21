@@ -8,13 +8,13 @@ fix_magic_quotes_gpc();
 fix_post();
 
 
-$point=check_session($_COOKIE['SESSION']);
+$point=check_session($_COOKIE['SESSION'] ?? '');
 if ($point!=$adminpoint){
   print "Access denied";
   exit;
 }
 
-$mode=substr($_GET["mode"],0,128);
+$mode=substr($_GET["mode"] ?? "",0,128);
 
 
 print "<html>
@@ -299,7 +299,7 @@ if (isset($_POST['save']))
 
 
 } elseif ($mode=="sent") {
-  $hash=substr($_GET["message"],0,128);
+  $hash=substr($_GET["message"] ?? "",0,128);
   $result=mysqli_query($link, "select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='1' order by outbox.date desc");
 
   if (mysqli_num_rows($result)) {
@@ -364,10 +364,10 @@ if (isset($_POST['save']))
   }
 
 } else {
-  $hash=substr($_GET["message"],0,128);
-  if ($_GET["action"]=="aprove"){
+  $hash=substr($_GET["message"] ?? "",0,128);
+  if (($_GET["action"] ?? "")=="aprove"){
     mysqli_query($link, "update `outbox` set aprove='1' where hash='$hash'");
-  } elseif ($_GET["action"]=="reject") {
+  } elseif (($_GET["action"] ?? "")=="reject") {
       $result=mysqli_query($link, "select * from `outbox` where hash='$hash'");
       $row=mysqli_fetch_object($result);
       mysqli_query($link, "
@@ -386,7 +386,7 @@ $row->text
 ', fromaddr='$mynode', toaddr='$row->fromaddr', origin='Bad robot', reply='', date=now(), hash='".md5(rand())."', sent='0', aprove='1'");
 
       mysqli_query($link, "update `outbox` set sent='1' where hash='$hash'");
-  } elseif ($_GET["action"]=="drop") {
+  } elseif (($_GET["action"] ?? "")=="drop") {
       mysqli_query($link, "update `outbox` set sent='1' where hash='$hash'");
   }  
   $result=mysqli_query($link, "select outbox.area,outbox.fromname,outbox.toname,outbox.fromaddr,outbox.toaddr,outbox.subject,outbox.date,outbox.hash, groups.name as grp from `outbox` left join `area_groups` on (area_groups.area=outbox.area) left join `groups` on (area_groups.group=groups.id) where outbox.sent='0' and outbox.aprove='0'");

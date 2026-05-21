@@ -1,10 +1,18 @@
     function daemon(){
-	check_new_messages.executePeriodically(document.variables.update_interval.value + '000',1440);
-	if (document.variables.mode.value=='thread') {
-	    scroll_thread('0');
-	} else {
-	    scroll_msglist();
-	}
+    if (typeof document.variables === 'undefined') {
+        return;
+    }
+
+    check_new_messages.executePeriodically(
+        document.variables.update_interval.value + '000',
+        1440
+    );
+
+    if (document.variables.mode.value == 'thread') {
+        scroll_thread(0);
+    } else {
+        scroll_msglist();
+    }
 
     }
 
@@ -79,26 +87,102 @@
     }
 
     function scroll_thread(hash) {
-	if (hash==0){
-	    hash=document.variables.hash.value;
-	}
-	var thepoint = document.getElementById(hash).offsetTop;
-	document.getElementById('thread').scrollTop = thepoint;
-	scroll_msglist();
+    if (hash == 0) {
+        if (document.variables && document.variables.hash) {
+            hash = document.variables.hash.value;
+        } else {
+            return; // нечего скроллить
+        }
+    }
+
+    var el = document.getElementById(hash);
+    var box = document.getElementById('thread');
+
+    if (!el || !box) {
+        return;
+    }
+
+    box.scrollTop = el.offsetTop;
+    scroll_msglist();
     }
 
     function scroll_msglist() {
-	var thepoint = document.getElementById("selected").offsetTop;
-	document.getElementById('msglist').scrollTop = thepoint - 64;
+        var selected = document.getElementById("selected");
+        var msglist  = document.getElementById("msglist");
+        if (!selected || !msglist) {
+          return; // безопасный выход
+        }
+        msglist.scrollTop = selected.offsetTop - 64;
+        
+	//var thepoint = document.getElementById("selected").offsetTop;
+	//document.getElementById('msglist').scrollTop = thepoint - 64;
     }
 
     function change_visible(hash) {
-	if (document.getElementById(hash + '_content').style.display == 'block'){
-	    document.getElementById(hash + '_content').style.display = 'none';
-	} else {
-	    document.getElementById(hash + '_content').style.display = 'block';
-	    scroll_thread(hash);
-	}
+        document.getElementById(hash + '_content')
     }
 
 
+
+function message_editor_guard_collect_values(fields) {
+    var values = [];
+    for (var i = 0; i < fields.length; i++) {
+        values.push(fields[i].value);
+    }
+    return values;
+}
+
+function message_editor_guard_is_dirty(editor) {
+    var values = message_editor_guard_collect_values(editor.fields);
+    for (var i = 0; i < values.length; i++) {
+        if (values[i] != editor.initial[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function setup_message_editor_guard() {
+    var forms = document.getElementsByTagName('form');
+    var editors = [];
+    for (var i = 0; i < forms.length; i++) {
+        var fields = forms[i].querySelectorAll('textarea[name=text], input[name=subject], input[name=toname], input[name=toaddr], select[name=selarea]');
+        if (!fields.length) {
+            continue;
+        }
+
+        editors.push({
+            form: forms[i],
+            fields: fields,
+            initial: message_editor_guard_collect_values(fields)
+        });
+
+        forms[i].addEventListener('submit', function() {
+            this.setAttribute('data-submitting', '1');
+        });
+    }
+
+    if (!editors.length) {
+        return;
+    }
+
+
+    window.addEventListener('beforeunload', function(event) {
+        for (var i = 0; i < editors.length; i++) {
+            if (editors[i].form.getAttribute('data-submitting') == '1') {
+                continue;
+            }
+            if (message_editor_guard_is_dirty(editors[i])) {
+                event.preventDefault();
+                event.returnValue = '';
+                return '';
+            }
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup_message_editor_guard);
+} else {
+    setup_message_editor_guard();
+}

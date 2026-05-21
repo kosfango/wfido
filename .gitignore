@@ -1,0 +1,18 @@
+# Local overrides and secrets
+htdocs/config.local.php
+htdocs/*.local.php
+
+# Runtime artifacts
+*.log
+*.pid
+*.lock
+
+# Editor and backup artifacts
+*.bak
+*.bak-*
+*.old
+*.back
+*.orig
+*.rej
+*.swp
+*~

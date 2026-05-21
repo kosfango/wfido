@@ -37,7 +37,7 @@ function addslashes_for_array($value){
 //Заэкранировать все спецсимволы в переданных от юзера строках
 //источник: http://www.ddvhouse.ru/articles/text/7/
 function fix_magic_quotes_gpc(){
-   if (!get_magic_quotes_gpc())
+   if (function_exists("get_magic_quotes_gpc") && get_magic_quotes_gpc() == false)
    {
        addslashes_for_array($_POST);
        addslashes_for_array($_GET);
@@ -48,7 +48,7 @@ function fix_magic_quotes_gpc(){
 /*
 function fix_magic_quotes_gpc(){
 global $_GET,$_POST,$_COOKIE;
-   if (!get_magic_quotes_gpc())
+   if (function_exists("get_magic_quotes_gpc") && get_magic_quotes_gpc() == false)
    {
        $_POST=addslashes_for_array($_POST);
        $_GET=addslashes_for_array($_GET);
@@ -81,6 +81,7 @@ global $area,$hash,$webroot,$link;
 
 
 function login($point,$password,$remember){
+$error="";
 global $sessionid,$mynode,$area,$hash,$webroot,$link;
 
   if ($point or $password) {
@@ -189,7 +190,7 @@ function message2html($text){
       if (!trim($string)) {
         $string="";
       }
-      if (substr($string,0,1)!="@" and  (substr($string,0,5)!="AREA:" or $body_flag)){
+      if (substr($string,0,1)!="@" and  (substr($string,0,5)!="AREA:" or ($body_flag ?? false))){
         $string_tmp=trim($string);
         $first_space=strpos($string_tmp," ");
         if (strtoupper(substr($string,0,10))==" * ORIGIN:"){
@@ -245,7 +246,7 @@ function message2html($text){
 function message2textarea ($text, $reply_to_name){
     $return="";
     foreach($text as $string){
-      if (substr($string,0,1)!="@" and  (substr($string,0,5)!="AREA:" or $body_flag)){
+      if (substr($string,0,1)!="@" and  (substr($string,0,5)!="AREA:" or ($body_flag ?? false))){
         if (strtoupper(substr($string,0,10))==" * ORIGIN:"){
             break;
         } elseif  (strtoupper(substr($string,0,3))!="..." and strtoupper(substr($string,0,3))!="---"){
@@ -468,7 +469,7 @@ function antispam($subect,$text) {
 
   $l=$subject." ".$text; // берем тело мессаги
   $l=preg_replace("/p\.s\./si","",$l); // убираем расхожую аббревиатурку "P.S:"
-  if(eregi("[a-z]+\.[a-z]+",$l) ) { 
+  if (preg_match("~[a-z]+\\.[a-z]+~i", $l)) { 
     return 1;
   } else { 
     return 0;
@@ -498,39 +499,32 @@ function convertYoutube($string) {
 function external_links($return) {
 	$return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
 	$url = parse_url($arr[0]);
-	$point=check_session($_COOKIE['SESSION']);
+	$point=check_session($_COOKIE['SESSION'] ?? '');
 	$row=customisation_display($point);
-	if (!$row->media_disabled)
-	{
-		// images
-		if(preg_match('#\.(png|jpg|gif|jpeg)$#i', $url['path']))
+	if (!$row->media_disabled && $url['scheme'] == 'https') {
+		//images
+		if(preg_match('#\.(png|jpg|gif|jpeg|webp)$#i', $url['path']))
 		{
 			if ($row->scale_img) { 
 				return '<img class=ext-image onclick="zoomzoom(this);" src="'.$arr[0] . '" width="'.$row->scale_value.'" />';
-// test				return '<a target="_blank" href="'.$arr[0].'">'.$arr[0].'</a>';
 			}
 			else {
-				return '<img class=ext-image onclick="zoomzoom(this);" src="'. $arr[0] . '" />';	
+				return '<img class=ext-image onclick="zoomzoom(this);" src="'. $arr[0] . '" />';
 			}
 		}
-		// youtube
-		//$var4=$arr[0];
-		//var_dump($var4);
-		if(preg_match("/\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)/i", $arr[0])) 
-		{
-		//$var5=convertYoutube($arr[0]);
-		return sprintf(convertYoutube($arr[0]));
-		//var_dump($var5);
+		//youtube
+		if(preg_match("/\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)/i", $arr[0])) {
+			return sprintf(convertYoutube($arr[0]));
 		}
-/*
-		if(in_array($url['host'], array('www.youtube.com', 'youtube.com'))
-			&& $url['path'] == '/watch'
-			&& isset($url['query']))
-		{
-			parse_str($url['query'], $query);
-			return sprintf('<iframe class="ext-video" src="https://www.youtube.com/embed/%s" allowfullscreen></iframe>', $query['v']);
+		//other videos
+		if(preg_match('#\.(mp4|mov)$#i', $url['path'])) {
+			if ($row->scale_img) {
+				return '<video class=" " controls="controls" type="video/";" src="'. $arr[0] . '" width="'.$row->scale_value.'" />';
+			}
+			else {
+				return '<video class=" " controls="controls" type="video/";" src="'. $arr[0] . '" />';
+			}
 		}
-*/
 	}
 	//links
 	return sprintf('<a target="_blank" href="safe_open.php?%1$s">%1$s</a>', $arr[0]);
