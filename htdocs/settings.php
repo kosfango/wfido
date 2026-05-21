@@ -102,26 +102,12 @@ if ($mode=="my"){
 
 } elseif ($mode=="other") {
   if (isset($_POST['save'])){
-    if ($_POST['close_old_session']){
-      $_POST['close_old_session']=1;
-    }else {
-      $_POST['close_old_session']=0;
-    }
-    if ($_POST['ajax']){
-      $_POST['ajax']=1;
-    }else {
-      $_POST['ajax']=0;
-    }
-	 if ($_POST['scale_img']){
-      $_POST['scale_img']=1;
-    }else {
-      $_POST['scale_img']=0;
-    }
-	 if ($_POST['media_disabled']){
-      $_POST['media_disabled']=1;
-    }else {
-      $_POST['media_disabled']=0;
-    }
+    $_POST['close_old_session'] = !empty($_POST['close_old_session']) ? 1 : 0;
+    $_POST['ajax'] = !empty($_POST['ajax']) ? 1 : 0;
+    $_POST['scale_img'] = !empty($_POST['scale_img']) ? 1 : 0;
+    $_POST['media_disabled'] = !empty($_POST['media_disabled']) ? 1 : 0;
+    $_POST['nums'] = $_POST['nums'] ?? '';
+    $_POST['pxls'] = $_POST['pxls'] ?? '';
     mysqli_query($link, "update `users` set `limit`='".$_POST['nums']."', `close_old_session`='".$_POST['close_old_session']."', `ajax`='".$_POST['ajax']."', `scale_img`='".$_POST['scale_img']."', `scale_value`='".$_POST['pxls']."', `media_disabled`='".$_POST['media_disabled']."' where `point`='$point'");
 
   }
