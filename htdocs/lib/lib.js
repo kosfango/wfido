@@ -91,7 +91,7 @@
         if (document.variables && document.variables.hash) {
             hash = document.variables.hash.value;
         } else {
-            return; // п©Б∙╚п©Б∙ёя▐Б■╓п©Б∙ёп©п│п©Б∙╛ я▐Б■┌п©Б∙╗я▐Б■─п©Б∙╛п©Б∙╘п©Б∙╘п©Б∙╕я▐Б■▄я▐Б√└
+            return;
         }
     }
 
@@ -110,7 +110,7 @@
         var selected = document.getElementById("selected");
         var msglist  = document.getElementById("msglist");
         if (!selected || !msglist) {
-          return; // п©Б∙═п©Б∙ёп©Б∙╔п©Б∙╛п©б╘п©Б∙÷я▐Б■┌п©Б∙╚я▐Б√─п©Б∙╖ п©Б∙║я▐Б√─я▐Б■≤п©Б∙╛п©Б∙╒
+          return;
         }
         msglist.scrollTop = selected.offsetTop - 64;
         
