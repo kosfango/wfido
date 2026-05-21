@@ -10,7 +10,7 @@
  * See http://www.gnu.org/copyleft/lesser.html
  *
  * Do not remove this comment if you want to use the script!
- * Не удаляйте данный комментарий, если вы хотите использовать скрипт!
+ * РќРµ СѓРґР°Р»СЏР№С‚Рµ СЌС‚РѕС‚ РєРѕРјРјРµРЅС‚Р°СЂРёР№, РµСЃР»Рё РІС‹ С…РѕС‚РёС‚Рµ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЃРєСЂРёРїС‚!
  *
  * This backend library also supports POST requests additionally to GET.
  *

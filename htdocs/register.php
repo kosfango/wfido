@@ -18,12 +18,12 @@ if ($name and $email and check_email($email) != 1 and domain_exists($email) and 
   $confirm=md5(rand());
   mysqli_query($link, "insert into users set name='$name', email='$email', password='$password', registred=NOW(), confirm='$confirm', active=0");
   $point=mysqli_insert_id($link);
-  //ĞÏÄĞÉÓËÁ
+  //Ğ¿Ğ¾Ğ´Ğ¿Ğ¸ÑĞºĞ°
   $result=mysqli_query($link, "select area_groups.area from area_groups join default_subscribe where default_subscribe.group=area_groups.group");
   while($row=mysqli_fetch_object($result)){
     mysqli_query($link, "insert into `subscribe` set `point`='$point', `area`='$row->area'");
   }
-  //ÕÓÔÁÎÏ×ËÁ ĞÒÁ×
+  //ÑƒÑÑ‚Ğ°Ğ½Ğ¾Ğ²ĞºĞ° Ğ¿Ñ€Ğ°Ğ²
   $result=mysqli_query($link, "select * from `default_perm`");
   while ($row=mysqli_fetch_object($result)){
     mysqli_query($link, "insert into `user_groups` set `point`='$point', `group`='$row->group', `perm`='$row->perm'");
