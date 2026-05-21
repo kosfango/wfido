@@ -8,11 +8,11 @@ require ('lib/lib.php');
 connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 
-$name=$_POST["name"];
-$email=$_POST["email"];
-$password=$_POST["password"];
-$password2=$_POST["password2"];
-$captcha=$_POST["captcha"];
+$name=$_POST["name"] ?? "";
+$email=$_POST["email"] ?? "";
+$password=$_POST["password"] ?? "";
+$password2=$_POST["password2"] ?? "";
+$captcha=$_POST["captcha"] ?? "";
 
 if ($name and $email and check_email($email) != 1 and domain_exists($email) and $password and $password2 and $password==$password2 and md5($captcha) == @$_COOKIE[CAPTCHA_COOKIE]){
   $confirm=md5(rand());
@@ -62,17 +62,17 @@ $mywww/activation.php?key=$confirm&point=$point
 
 } else {
 $error='<font color="red">Enter all fields!</font>';
-if(!empty($_POST['captcha']) and md5($_POST['captcha']) != @$_COOKIE[CAPTCHA_COOKIE]) {
+if(!empty($captcha) and md5($captcha) != @$_COOKIE[CAPTCHA_COOKIE]) {
 	$error='<font color="red">Wrong captcha code!</font>';
 }
-if($_POST['password'] != $_POST['password2']) {
+if($password != $password2) {
 	$error='<font color="red">Passwords mismatch!</font>';
 }
-if(!empty($_POST['email']) and !domain_exists($_POST['email'])) {
+if(!empty($email) and !domain_exists($email)) {
 	$error='<font color="red">Invalid email!</font>';
 }
 
-if(md5($_POST['captcha']) == @$_COOKIE[CAPTCHA_COOKIE] and !empty($_POST['email']) and check_email($_POST['email']) == 1) {
+if(!empty($captcha) and md5($captcha) == @$_COOKIE[CAPTCHA_COOKIE] and !empty($email) and check_email($email) == 1) {
 	$error='<font color="red">Email already exists!</font>';
 }
   print "<html>
