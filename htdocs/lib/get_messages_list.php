@@ -249,7 +249,7 @@ $GLOBALS['_RESULT'] = array(
 
 // This includes a PHP fatal error! It will go to the debug stream,
 // frontend may intercept this and act a reaction.
-if ($_REQUEST['str'] == 'error') {
+if (($_REQUEST['str'] ?? '') == 'error') {
   error_demonstration__make_a_mistake_calling_undefined_function();
 }
 ?>
