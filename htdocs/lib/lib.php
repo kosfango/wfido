@@ -88,7 +88,7 @@ global $sessionid,$mynode,$area,$hash,$webroot,$link;
 	if ($point and $password and check_password($point,$password)) {
 	
 	    if(!session_id()) session_start();
-	    if ($_COOKIE['SESSION']) {
+	    if (!empty($_COOKIE['SESSION'])) {
 		$sessionid=$_COOKIE['SESSION'];
 	    } else {
 		$sessionid=md5(rand());

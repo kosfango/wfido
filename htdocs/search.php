@@ -77,7 +77,6 @@ if ($string){
 
   $search=new SphinxClient();
   $search->SetServer( $sphinx_host, $sphinx_port );
-  $search->SetMatchMode(SPH_MATCH_EXTENDED2);
   $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
 //  $search->SetSortMode( SPH_SORT_TIME_SEGMENTS, 'msg' );
   if ($area) {
