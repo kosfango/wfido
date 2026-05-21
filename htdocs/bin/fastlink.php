@@ -269,26 +269,33 @@ function match_text($str1,$str2){
 
 function save_thread($thread_info){
     global $link;
+    $area = mysqli_real_escape_string($link, $thread_info['area']);
+    $thread = mysqli_real_escape_string($link, $thread_info['thread']);
+    $hash = mysqli_real_escape_string($link, $thread_info['last_hash']);
+    $subject = mysqli_real_escape_string($link, $thread_info['subject']);
+    $author = mysqli_real_escape_string($link, $thread_info['author']);
+    $author_address = mysqli_real_escape_string($link, $thread_info['author_address']);
+    $author_date = mysqli_real_escape_string($link, $thread_info['author_date']);
+    $last_author = mysqli_real_escape_string($link, $thread_info['last_author']);
+    $last_author_date = mysqli_real_escape_string($link, $thread_info['last_author_date']);
+    $num = (int)$thread_info['num'];
+    $lastupdate = mysqli_real_escape_string($link, $thread_info['lastupdate']);
+
     mysqli_query($link, "
 	replace into `threads` set 
-	  area=\"".$thread_info['area']."\", 
-          thread=\"".$thread_info['thread']."\", 
-          hash=\"".$thread_info['last_hash']."\", 
-	  subject=\"".$thread_info['subject']."\",
-	  author=\"".$thread_info['author']."\", 
-	  author_address=\"".$thread_info['author_address']."\", 
-          author_date=\"".$thread_info['author_date']."\", 
-	  last_author=\"".$thread_info['last_author']."\",
-	  last_author_date=\"".$thread_info['last_author_date']."\",
-	  num=\"".$thread_info['num']."\", 
-	  lastupdate=\"".$thread_info['lastupdate']."\";
+	  area=\"$area\", 
+          thread=\"$thread\", 
+          hash=\"$hash\", 
+	  subject=\"$subject\",
+	  author=\"$author\", 
+	  author_address=\"$author_address\", 
+          author_date=\"$author_date\", 
+	  last_author=\"$last_author\",
+	  last_author_date=\"$last_author_date\",
+	  num=\"$num\", 
+	  lastupdate=\"$lastupdate\";
     ");
 
 }
-
-
-
-
-
 
 ?>

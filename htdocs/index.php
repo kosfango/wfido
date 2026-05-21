@@ -154,9 +154,13 @@ else {
 	$result=mysqli_query($link, "select count(messages.area) as nummsg, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area='' and (messages.toaddr='$myaddr' or messages.fromaddr='$myaddr') and view.area='NETMAIL' and view.point='$point' group by view.area");
 
 //считаем количество сообщений
+	$netmail_last_view_date = 0;
+	$netmail_rec = 0;
 	if (mysqli_num_rows($result)){ 
 		$row = mysqli_fetch_object($result);
 		$nummsg = $row->nummsg;
+		$netmail_last_view_date = $row->last_view_date ?? 0;
+		$netmail_rec = $row->rec ?? 0;
 	}
 	else {
 		$nummsg="0";
@@ -168,7 +172,7 @@ else {
 	}
 	else {
 		$class="netmail";
-		if (($row->last_view_date - $row->rec) < 0){
+		if (($netmail_last_view_date - $netmail_rec) < 0){
 			$newmessages="*";
 		}
 		else {
