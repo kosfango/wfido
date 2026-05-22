@@ -685,7 +685,13 @@ To: <input type=text name=toname value=\"All\">";
 			print "</td></tr>
 </table>\n";
 			if ($area!="OUTBOX"){
-				print "<br><br><br><br><table width=100%><tr height=20%><td align=\"center\">Your message was sent and will be displayed after tossing process!</td><tr></table>\n";
+				if ($mode=="delete") {
+					$status_text="Your message was removed!";
+				}
+				else {
+					$status_text="Your message was sent and will be displayed after tossing process!";
+				}
+				print "<br><br><br><br><table width=100%><tr height=20%><td align=\"center\">$status_text</td><tr></table>\n";
 			}
     }
   }
