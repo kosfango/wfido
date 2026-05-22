@@ -183,10 +183,18 @@ else {
 //Карбонка:
 	$result=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.area!='' and messages.toname='$myname' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
 	$result2=mysqli_query($link, "select count(view.last_view_date) as nummsg, messages.area, unix_timestamp(max(messages.recieved)) as rec, unix_timestamp(view.last_view_date) as last_view_date from messages,view where messages.fromname='$myname' and messages.area!='' and view.area='CARBONAREA' and view.point='$point' group by view.last_view_date");
+	$carbon_last_view_date = 0;
+	$carbon_rec = 0;
+	$carbon2_last_view_date = 0;
+	$carbon2_rec = 0;
 	if (mysqli_num_rows($result) or mysqli_num_rows($result2)){
 		$row = mysqli_fetch_object($result);
 		$row2 = mysqli_fetch_object($result2);
-		$nummsg = $row->nummsg + $row2->nummsg;
+		$nummsg = (int)($row->nummsg ?? 0) + (int)($row2->nummsg ?? 0);
+		$carbon_last_view_date = $row->last_view_date ?? 0;
+		$carbon_rec = $row->rec ?? 0;
+		$carbon2_last_view_date = $row2->last_view_date ?? 0;
+		$carbon2_rec = $row2->rec ?? 0;
 	}
 	else {
 		$nummsg="0";
@@ -197,7 +205,7 @@ else {
 	}
 	else {
 		$class="carbonarea";
-		if ((($row->last_view_date - $row->rec) < 0) or (($row2->last_view_date - $row2->rec) < 0)){
+		if ((($carbon_last_view_date - $carbon_rec) < 0) or (($carbon2_last_view_date - $carbon2_rec) < 0)){
 			$newmessages="*";
 		}
 		else {
@@ -206,7 +214,7 @@ else {
 	}
 	print "<p onClick=\"document.location='?area=CARBONAREA';return false\" style=\"cursor: pointer;\" class=\"$class\"><a href=\"?area=CARBONAREA\" class=\"carbonarea\">CARBONAREA</a> ($nummsg) $newmessages</p>\n";
 //Все остальные эхи:
-	$result=mysqli_query($link, "select areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
+	$result=mysqli_query($link, "select distinct areas.area, areas.messages as nummsg, unix_timestamp(areas.recieved) as rec, unix_timestamp(view.last_view_date) as last_view_date from areas join subscribe left join view on (view.area=areas.area and view.point='$point') where subscribe.area=areas.area and subscribe.point='$point' order by areas.area");
 	if (mysqli_num_rows($result)) {
 		while ($row = mysqli_fetch_object($result)) {
 			if ($area==strtoupper($row->area)) {

@@ -19,7 +19,7 @@ if ($name and $email and check_email($email) != 1 and domain_exists($email) and 
   mysqli_query($link, "insert into users set name='$name', email='$email', password='$password', registred=NOW(), confirm='$confirm', active=0");
   $point=mysqli_insert_id($link);
   //подписка
-  $result=mysqli_query($link, "select area_groups.area from area_groups join default_subscribe where default_subscribe.group=area_groups.group");
+  $result=mysqli_query($link, "select distinct area_groups.area from area_groups join default_subscribe where default_subscribe.group=area_groups.group");
   while($row=mysqli_fetch_object($result)){
     mysqli_query($link, "insert into `subscribe` set `point`='$point', `area`='$row->area'");
   }
