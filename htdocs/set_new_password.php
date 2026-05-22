@@ -149,7 +149,7 @@ require_once("header.php");
 // Завершение запроса выбора пользователя из таблицы users
 $query_select_user->close();
 //Закрываем подключение к БД
-mysqli_close();
+if (isset($link)) { mysqli_close($link); }
 
 require_once("footer.php");
 
