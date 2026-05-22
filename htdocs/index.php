@@ -8,10 +8,10 @@ start_timer();
     $hash=substr($_GET["message"] ?? "",0,128);
     $mode=substr($_GET["mode"] ?? "",0,128);
 if (isset($_POST["subject"])) {
-	$subject=$_POST["subject"];
-	$reply=$_POST["reply"];
-	$toaddr=$_POST["toaddr"];
-	$toname=$_POST["toname"];
+	$subject=$_POST["subject"] ?? "";
+	$reply=$_POST["reply"] ?? "";
+	$toaddr=$_POST["toaddr"] ?? "";
+	$toname=$_POST["toname"] ?? "";
 }
 
 $text=preg_replace('/\&#8211;/','-',$_POST["text"] ?? "");
