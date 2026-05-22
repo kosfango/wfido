@@ -130,7 +130,16 @@
     }
 
     function change_visible(hash) {
-        document.getElementById(hash + '_content')
+        var content = document.getElementById(hash + '_content');
+        if (!content) {
+            return false;
+        }
+        if (content.style.display == 'none' || content.style.display === '') {
+            content.style.display = 'block';
+        } else {
+            content.style.display = 'none';
+        }
+        return false;
     }
 
 

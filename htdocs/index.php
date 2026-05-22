@@ -374,7 +374,7 @@ $header_text
           print "<div class=thread_informer>Этот тред является ответом на письмо из другого треда: <a href='?area=$area&message=$parent_message&mode=thread'>...</a></div>";
 				}
       }
-      print "<div id=\"$row->hash\" style='margin-left: ".($row->level)."0;' class=$class><div onclick=\"change_visible('$row->hash'); return false\" style='cursor: pointer;'>$row->date, $row->fromname ($row->fromaddr): $row->subject</div>\n";
+      print "<div id=\"$row->hash\" style='margin-left: ".($row->level)."0;' class=$class><div onclick=\"change_visible('$row->hash'); return false\" style='cursor: pointer; display: block; width: 100%; box-sizing: border-box;'>$row->date, $row->fromname ($row->fromaddr): $row->subject</div>\n";
       print "<div id=\"".$row->hash."_content\" style='display: $display; background-color: #FFFFFF;'>\n";
       $text=explode("\n", $row->text);
       print message2html($text);
