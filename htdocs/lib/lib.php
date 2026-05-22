@@ -504,11 +504,12 @@ function convertYoutube($string) {
 function external_links($return) {
 	$return = preg_replace_callback('#(https:\/\/\S*)|(http:\/\/\S*)#', function($arr) {
 	$url = parse_url($arr[0]);
+	$url_path = $url['path'] ?? '';
 	$point=check_session($_COOKIE['SESSION'] ?? '');
 	$row=customisation_display($point);
 	if (!$row->media_disabled && $url['scheme'] == 'https') {
 		//images
-		if(preg_match('#\.(png|jpg|gif|jpeg|webp)$#i', $url['path']))
+		if(preg_match('#\.(png|jpg|gif|jpeg|webp)$#i', $url_path))
 		{
 			if ($row->scale_img) { 
 				return '<img class=ext-image onclick="zoomzoom(this);" src="'.$arr[0] . '" width="'.$row->scale_value.'" />';
@@ -522,7 +523,7 @@ function external_links($return) {
 			return sprintf(convertYoutube($arr[0]));
 		}
 		//other videos
-		if(preg_match('#\.(mp4|mov)$#i', $url['path'])) {
+		if(preg_match('#\.(mp4|mov)$#i', $url_path)) {
 			if ($row->scale_img) {
 				return '<video class=" " controls="controls" type="video/";" src="'. $arr[0] . '" width="'.$row->scale_value.'" />';
 			}
