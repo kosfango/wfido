@@ -428,7 +428,7 @@ else {
       $query="select area,fromname,toname,fromaddr,toaddr,subject,date,hash from `outbox` where fromaddr='$myaddr' and sent='0' order by date desc";
     }
 		elseif ($area=="FAVORITES") {
-      $query="select messages.area as area,messages.fromname as fromname,messages.toname as toname,messages.subject as subject,messages.date as data,messages.hash as hash from `messages` join `favorites` where messages.hash=favorites.message and point='$point' order by date desc";
+      $query="select messages.area as area,messages.fromname as fromname,messages.toname as toname,messages.subject as subject,messages.date as date,unix_timestamp(messages.recieved) as rec,messages.hash as hash from `messages` join `favorites` where messages.hash=favorites.message and point='$point' order by date desc";
     }
 		else {
 #      $query="select  area,hash,fromname,toname,subject,date,unix_timestamp(recieved) as rec  from `messages` where area='$area' order by rec desc";
@@ -457,11 +457,12 @@ else {
         }
 //все письма с датой получения больше, чем дата последнего захода в эху, считаем новыми. и выделяем.
 //выделенное письмо (то на котором стоит "курсор") так же отмечаем
-        if(($area_last_read_date - $row->rec) < 0 and $hash==$row->hash) {
+        $row_rec = $row->rec ?? 0;
+        if(($area_last_read_date - $row_rec) < 0 and $hash==$row->hash) {
           $class="newselected";
           $element_id=" name=\"selected\", id=\"selected\" ";
         }
-				elseif(($area_last_read_date - $row->rec) < 0) {
+				elseif(($area_last_read_date - $row_rec) < 0) {
           $class="new";
           $element_id="";
         }
@@ -561,6 +562,19 @@ else {
     $result=mysqli_query($link, $query);
     if (mysqli_num_rows($result) or $mode=="new") {
       $row = mysqli_fetch_object($result);
+      if (!$row) {
+        $row = new stdClass();
+        $row->fromname = '';
+        $row->fromaddr = '';
+        $row->toname = '';
+        $row->toaddr = '';
+        $row->date = '';
+        $row->subject = '';
+        $row->area = $area;
+        $row->hash = '';
+        $row->text = '';
+        $row->msgid = '';
+      }
 //доделать: рисовать в шапке "new" и "reply" только в том случае, если права на запись в эху есть.
       print "<table width=100% height=10>
 <tr height=1%><td class=\"messagehead\" width=\"33%\">From: $row->fromname ($row->fromaddr)</td>

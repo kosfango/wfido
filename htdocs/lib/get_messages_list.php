@@ -4,19 +4,19 @@ require_once ('../config.php');
 require_once ('lib.php');
 require_once ('JsHttpRequest.php');
 $JsHttpRequest = new JsHttpRequest("koi8-r");
-if ($_REQUEST['area']) {
+if (($_REQUEST['area'] ?? '')) {
     $area=strtoupper(substr($_REQUEST['area'],0,128));
 } else {
     $area="NETMAIL";
 }
 
-if ($_REQUEST['mode']=='thread'){
+if (($_REQUEST['mode'] ?? '')=='thread'){
     $mode='thread';
 } else {
     $mode='';
 }
 
-if ($_REQUEST['hash']){
+if (($_REQUEST['hash'] ?? '')){
     $hash=substr($_REQUEST['hash'],0,128);
 } else {
     $hash='';
@@ -25,7 +25,8 @@ connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass);
 fix_magic_quotes_gpc();
 
 
-$point=check_session($_COOKIE['SESSION']);
+$return="";
+$point=check_session($_COOKIE['SESSION'] ?? '');
 //Получаем инфо о юзере
 $query=mysqli_query($link, "select * from `users` where point='$point'");
 $row=mysqli_fetch_object($query);

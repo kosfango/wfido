@@ -311,7 +311,10 @@ function set_area_last_view($area,$hash){
 	$result=mysqli_query($link, "select last_view_message from `view` where point='$point' and area='$area'");
 	if (mysqli_num_rows($result)){
     	    $row=mysqli_fetch_object($result);
-    	    $query=$query . ", last_view_message=$row->last_view_message";
+    	    if (!empty($row->last_view_message)) {
+    	        $last_view_message = mysqli_real_escape_string($link, $row->last_view_message);
+    	        $query=$query . ", last_view_message='$last_view_message'";
+    	    }
         }
     }
     mysqli_query($link, $query);
@@ -321,7 +324,10 @@ function get_area_last_view($area){
     global $point, $link;
     $query=mysqli_query($link, "select unix_timestamp(last_view_date) as date from `view` where point='$point' and area='$area'");
     $row=mysqli_fetch_object($query);
-    return $row->date;
+    if (!$row) {
+        return 0;
+    }
+    return $row->date ?? 0;
 }
 
 
@@ -329,7 +335,10 @@ function get_area_last_message($area){
     global $point, $link;
     $query=mysqli_query($link, "select last_view_date,last_view_message from `view` where point='$point' and area='$area'");
     $row=mysqli_fetch_object($query);
-    $last_hash=$row->last_view_message;
+    if (!$row) {
+        return 0;
+    }
+    $last_hash=$row->last_view_message ?? 0;
     if (mysqli_num_rows(mysqli_query($link, "select * from `messages` where hash='$last_hash'"))){
       return $last_hash;
     } else {
@@ -486,10 +495,6 @@ function type_style($string){
 function convertYoutube($string) {
                     return preg_replace(
                     "#\s*[a-zA-Z\/\/:\.]*youtu(be.com\/watch\?v=|.be\/)([a-zA-Z0-9\-_]+)([a-zA-Z0-9\/\*\-\_\?\&\;\%\=\.]*)#i",
-                //"/[http(s)]*:\/\/[www.]*you[\D]*[\S]*/i",
-                //"/[http(s)]*:\/\/[www.]*you[\D]*[\w]*/i",
-                //"#<a (?:.*?)href=["\\\']http[s]?:\/\/(?:[^\.]+\.)*youtube\.com\/(?:v\/|watch\?(?:.*?\&)?v=|embed\/)([\w\-\_]+)["\\\']#ixs",
-                //    "<iframe src=\"//www.youtube.com/embed/$2\" allowfullscreen></iframe>",
                      "<iframe class=\"ext-video\" src=\"//www.youtube.com/embed/$2\" allowfullscreen></iframe>",
                      $string
                     );
