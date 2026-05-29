@@ -115,6 +115,7 @@ global $sessionid,$mynode,$area,$hash,$webroot,$link;
 	    if ($row->close_old_session) {
     		mysqli_query($link, "UPDATE `sessions` SET `active`=0 WHERE `point`='$point' or `sessionid`='$sessionid'");
 	    }
+	    mysqli_query($link, "UPDATE `users` SET `lastlog`=NOW() WHERE `point`='$point'");
     	    mysqli_query($link, "INSERT INTO `sessions` SET `date`=NOW(), `point`='$point', `sessionid`='$sessionid', `ip`='$ip', `browser`='$browser', `active`=1");
 //	    header ('HTTP/1.1 301 Moved Permanently');
     	    header ('Location: '.$webroot.'/?area='.urlencode($area).'&message='.$hash);

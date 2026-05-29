@@ -105,7 +105,7 @@ if (isset($_POST['save']))
     print "<option value=\"$row->id\"> $row->name";
   }
   print "</select></td></tr>
- <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
+ <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
 </table></form>";
 
 
@@ -133,7 +133,7 @@ if (isset($_POST['save']))
   }
   print "
  <tr><td align=right class=item> создать новую группу</td><td class=item><input type=text name=\"new_group\" value=\"\"></td></tr>
- <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
+ <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
 </table></form>";
 
 
@@ -142,10 +142,33 @@ if (isset($_POST['save']))
 if (isset($_POST['save']))
 {
   if ($_POST['save']){
+    $deleted_users=array();
+    foreach ($_POST as $key=>$value) {
+      if (substr($key,0,7)=="delete-" and $value){
+        $user=(int)substr($key,7);
+        if ($user and $user!=$point and $user!=1){
+          $deleted_users[$user]=$user;
+        }
+      }
+    }
+    foreach ($deleted_users as $user){
+      $user_addr=$mynode.".".$user;
+      mysqli_query($link, "delete from `sessions` where `point`='$user'");
+      mysqli_query($link, "delete from `favorites` where `point`='$user'");
+      mysqli_query($link, "delete from `subscribe` where `point`='$user'");
+      mysqli_query($link, "delete from `user_groups` where `point`='$user'");
+      mysqli_query($link, "delete from `view` where `point`='$user'");
+      mysqli_query($link, "delete from `view_thread` where `point`='$user'");
+      mysqli_query($link, "delete from `outbox` where `fromaddr`='$user_addr' or `toaddr`='$user_addr'");
+      mysqli_query($link, "delete from `users` where `point`='$user'");
+    }
     foreach ($_POST as $key=>$value) {
       if (substr($key,0,5)=="perm-" and $value){
         $key=substr($key,5);
 	list($user,$group)=explode("-",$key);
+        if (isset($deleted_users[(int)$user])) {
+          continue;
+        }
 	if ($value=="deny"){
 	  mysqli_query($link, "delete from `user_groups` where `point`='$user' and `group`='$group'");
 	}elseif($value=="read"){
@@ -163,16 +186,30 @@ if (isset($_POST['save']))
 }
   print "<form method=post action='?mode=users'> 
 <table width=100%>
- <tr><td class=header>user info</td><td class=header>groups</td></tr>\n";
-  $result=mysqli_query($link, "select point,name,email,active from users order by point");
+ <tr><td class=header>delete</td><td class=header>user info</td><td class=header>last login</td><td class=header>groups</td></tr>\n";
+  $result=mysqli_query($link, "select point,name,email,active,lastlog from users order by point");
     while ($row = mysqli_fetch_object($result)){
     if ($row->active) {
       $active="<font color=green>active</font>";
     } else {
       $active="<font color=red>not active</font>";
     }
+    if ($row->lastlog and $row->lastlog!='0000-00-00 00:00:00') {
+      $lastlog=$row->lastlog;
+    } else {
+      $lastlog="never";
+    }
+    if ($row->point==$point) {
+      $delete_control="self";
+    } elseif ($row->point==1) {
+      $delete_control="protected";
+    } else {
+      $delete_control="<input type=checkbox name=delete-$row->point value=1>";
+    }
     print " <tr>
+  <td class=item valign=top align=center>$delete_control</td>
   <td class=item valign=top>$row->name($mynode.$row->point, $row->email), $active</td>
+  <td class=item valign=top>$lastlog</td>
   <td class=item>\n";
     $result2=mysqli_query($link, "select groups.name as groupname, groups.id as groupid, user_groups.point as point, user_groups.perm as `perm` from groups left join user_groups on (groups.id=user_groups.group and user_groups.point='$row->point')");
     while ($row2 = mysqli_fetch_object($result2)){
@@ -209,15 +246,14 @@ if (isset($_POST['save']))
   }
   print "
  <tr>
-  <td colspan=2 align=right>
+  <td colspan=4 align=right>
    <input type=hidden name=\"save\" value=\"1\">
-   <input type=submit value=\"Сохранить\">
+   <input type=submit value=\"Save changes\">
   </td>
  </tr>
 </table>
 </form>";
-}elseif ($mode=="default"){
-if (isset($_POST['save']))
+}elseif ($mode=="default"){if (isset($_POST['save']))
 {
   if ($_POST['save']){
     mysqli_query($link, "delete from `default`");
@@ -293,7 +329,7 @@ if (isset($_POST['save']))
  </tr>\n";
   }
   print "
- <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
+ <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
 </table>
 </form>";
 
