@@ -145,10 +145,10 @@ if (isset($_POST['save']))
   print "<form method=post action='?mode=groups'> 
 <table width=100%>
  <tr><td class=header>group name</td><td class=header>rename to</td><td class=header>delete</td></tr>";
-  $result=mysqli_query($link, "select * from groups");
+  $result=mysqli_query($link, "select * from groups order by (lower(name)='netmail'), name");
   while ($row = mysqli_fetch_object($result)){
     if ($row->id==$default_group_id){
-      $delete_control="сначала снимите флаг";
+      $delete_control="default group, uncheck it first in default settings";
     } else {
       $delete_control="<input type=checkbox name=\"delete-$row->id\" value=\"1\">";
     }
