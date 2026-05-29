@@ -105,7 +105,7 @@ if (isset($_POST['save']))
     print "<option value=\"$row->id\"> $row->name";
   }
   print "</select></td></tr>
- <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
+ <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
 </table></form>";
 
 
@@ -156,7 +156,7 @@ if (isset($_POST['save']))
   }
   print "
  <tr><td align=right class=item>создать новую группу</td><td class=item><input type=text name=\"new_group\" value=\"\"></td><td class=item>&nbsp;</td></tr>
- <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
+ <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
 </table></form>";
 
 
@@ -270,7 +270,7 @@ if (isset($_POST['save']))
  <tr>
   <td colspan=4 align=right>
    <input type=hidden name=\"save\" value=\"1\">
-   <input type=submit value=\"Save changes\">
+   <input type=submit value=\"Сохранить\">
   </td>
  </tr>
 </table>
@@ -323,14 +323,14 @@ if (isset($_POST['save']))
 <tr><td class=\"item\">Origin:</td><td><input type=text name=origin zise=128 style=\"width: 100%\" value='$row->value'></td></tr>
 </table>
 <table width=100%>
- <tr><td class=header>group</td><td class=header>Default permissions</td><td class=header>subscribe</td><td class=header>группа по умолчанию</td></tr>";
+ <tr><td class=header>group</td><td class=header>Default permissions</td><td class=header>subscribe</td><td class=header>default group</td></tr>";
   $none_default_checked="";
   if (!$default_group_id){
     $none_default_checked=" checked=\"1\"";
   }
   print "
  <tr>
-  <td class=item><i>не выбрана</i></td>
+  <td class=item><i>no default group</i></td>
   <td class=item>&nbsp;</td>
   <td class=item>&nbsp;</td>
   <td class=item align=center><input type=radio name=\"default_group\" value=\"0\"$none_default_checked></td>
@@ -365,7 +365,7 @@ if (isset($_POST['save']))
     }
     $default_group_control="<input type=radio name=\"default_group\" value=\"$row->group_id\"$default_group_checked>";
     if ($row->group_id=='1' or strtolower($row->group_name)=="netmail"){
-      $default_group_control="нельзя";
+      $default_group_control="none";
     }
     print "
  <tr>
@@ -383,7 +383,7 @@ if (isset($_POST['save']))
  </tr>\n";
   }
   print "
- <tr><td colspan=4 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
+ <tr><td colspan=4 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Сохранить\"></td></tr>
 </table>
 </form>";
 
