@@ -93,7 +93,7 @@ if (isset($_POST['save']))
    $result=mysqli_query($link, "select distinct upper(areas.area) as area, groups.name as grp from areas left join area_groups on areas.area=area_groups.area  left join groups on area_groups.group=groups.id order by area");
   while ($row = mysqli_fetch_object($result)){
     if (!$row->grp){
-      $group="<font color=red>группа не задана</font>";
+      $group="<font color=red>без группы</font>";
     } else {
       $group=$row->grp;
     }
@@ -113,6 +113,23 @@ if (isset($_POST['save']))
 if (isset($_POST['save']))
 {
   if ($_POST['save']){
+    $default_group_id=get_default_group_id();
+    foreach (getRealInput('POST') as $key=>$value) {
+      if (substr($key,0,7)=="delete-" and $value){
+        $group_id=(int)substr($key,7);
+        if ($group_id and $group_id!=$default_group_id){
+          if ($default_group_id){
+            mysqli_query($link, "update `area_groups` set `group`='$default_group_id' where `group`='$group_id'");
+          } else {
+            mysqli_query($link, "delete from `area_groups` where `group`='$group_id'");
+          }
+          mysqli_query($link, "delete from `default_perm` where `group`='$group_id'");
+          mysqli_query($link, "delete from `default_subscribe` where `group`='$group_id'");
+          mysqli_query($link, "delete from `user_groups` where `group`='$group_id'");
+          mysqli_query($link, "delete from `groups` where `id`='$group_id'");
+        }
+      }
+    }
     foreach (getRealInput('POST') as $key=>$value) {
       if (substr($key,0,5)=="text-" and $value){
         $id=substr($key,5);
@@ -124,18 +141,23 @@ if (isset($_POST['save']))
     }
   }
 }
+  $default_group_id=get_default_group_id();
   print "<form method=post action='?mode=groups'> 
 <table width=100%>
- <tr><td class=header>group name</td><td class=header>rename to</td></tr>";
+ <tr><td class=header>group name</td><td class=header>rename to</td><td class=header>delete</td></tr>";
   $result=mysqli_query($link, "select * from groups");
   while ($row = mysqli_fetch_object($result)){
-    print " <tr><td class=item>$row->name</td><td class=item><input type=text name=\"text-$row->id\" value=\"\"></td></tr>\n";
+    if ($row->id==$default_group_id){
+      $delete_control="сначала снимите флаг";
+    } else {
+      $delete_control="<input type=checkbox name=\"delete-$row->id\" value=\"1\">";
+    }
+    print " <tr><td class=item>$row->name</td><td class=item><input type=text name=\"text-$row->id\" value=\"\"></td><td class=item align=center>$delete_control</td></tr>\n";
   }
   print "
- <tr><td align=right class=item> создать новую группу</td><td class=item><input type=text name=\"new_group\" value=\"\"></td></tr>
- <tr><td colspan=2 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
+ <tr><td align=right class=item>создать новую группу</td><td class=item><input type=text name=\"new_group\" value=\"\"></td><td class=item>&nbsp;</td></tr>
+ <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
 </table></form>";
-
 
 
 }elseif ($mode=="users"){
@@ -264,7 +286,7 @@ if (isset($_POST['save']))
         $group_id=substr($key,6);
 	if ($value=="write") {
 	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='3'");
-	} elseif ($vale=="antispam") {
+	} elseif ($value=="antispam") {
 	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='4'");
 	} elseif ($value=="premod") {
 	  mysqli_query($link, "insert into `default_perm` set `group`='$group_id', `perm`='2'");
@@ -279,18 +301,41 @@ if (isset($_POST['save']))
     if ($_POST['origin']){
       mysqli_query($link, "insert into `default` set `value`='".$_POST['origin']."', `key`='origin'");
     }
+    $default_group=(int)($_POST['default_group'] ?? 0);
+    if ($default_group){
+      $result_group=mysqli_query($link, "select `id`,`name` from `groups` where `id`='$default_group' limit 1");
+      $row_group=mysqli_fetch_object($result_group);
+      if ($row_group and strtolower($row_group->name)!="netmail" and $row_group->id!=1){
+        mysqli_query($link, "insert into `default` set `value`='".$default_group."', `key`='default_group'");
+      }
+    }
+    assign_default_group_to_ungrouped_areas();
   }
 }
   print "<form method=post action='?mode=default'>\n";
   $result=mysqli_query($link, "select * from `default` where `key`='origin'");
   $row = mysqli_fetch_object($result);
+  $result_default_group=mysqli_query($link, "select `value` from `default` where `key`='default_group'");
+  $row_default_group = mysqli_fetch_object($result_default_group);
+  $default_group_id=(int)($row_default_group->value ?? 0);
   print"<table width=100%>
 <tr><td class=header colspan=2>Default settings</td></tr>
 <tr><td class=\"item\">Origin:</td><td><input type=text name=origin zise=128 style=\"width: 100%\" value='$row->value'></td></tr>
 </table>
 <table width=100%>
- <tr><td class=header>group</td><td class=header>Default permissions</td><td class=header>subscribe</td></tr>";
-  $result=mysqli_query($link, "select groups.name as group_name, groups.id as group_id, default_perm.perm as `perm`, default_subscribe.group as subscribe from groups left join `default_perm` on (groups.id=default_perm.group) left join `default_subscribe` on (groups.id=default_subscribe.group)");
+ <tr><td class=header>group</td><td class=header>Default permissions</td><td class=header>subscribe</td><td class=header>группа по умолчанию</td></tr>";
+  $none_default_checked="";
+  if (!$default_group_id){
+    $none_default_checked=" checked=\"1\"";
+  }
+  print "
+ <tr>
+  <td class=item><i>не выбрана</i></td>
+  <td class=item>&nbsp;</td>
+  <td class=item>&nbsp;</td>
+  <td class=item align=center><input type=radio name=\"default_group\" value=\"0\"$none_default_checked></td>
+ </tr>\n";
+  $result=mysqli_query($link, "select groups.name as group_name, groups.id as group_id, default_perm.perm as `perm`, default_subscribe.group as subscribe from groups left join `default_perm` on (groups.id=default_perm.group) left join `default_subscribe` on (groups.id=default_subscribe.group) order by (lower(groups.name)='netmail'), groups.name");
   while ($row = mysqli_fetch_object($result)){
     $read="";
     $write="";
@@ -298,6 +343,7 @@ if (isset($_POST['save']))
     $premod="";
     $subscribe="";
     $antispam="";
+    $default_group_checked="";
     if ($row->perm=="3"){
       $write=" selected";
     } elseif ($row->perm=="4"){
@@ -314,6 +360,13 @@ if (isset($_POST['save']))
     } elseif ($row->subscribe){
       $subscribe=" checked=\"1\"";
     }
+    if ($row->group_id==$default_group_id){
+      $default_group_checked=" checked=\"1\"";
+    }
+    $default_group_control="<input type=radio name=\"default_group\" value=\"$row->group_id\"$default_group_checked>";
+    if ($row->group_id=='1' or strtolower($row->group_name)=="netmail"){
+      $default_group_control="нельзя";
+    }
     print "
  <tr>
   <td class=item>$row->group_name</td>
@@ -326,13 +379,13 @@ if (isset($_POST['save']))
    </select>
   </td>
   <td class=item><input type=checkbox name=\"subs-$row->group_id\" $subscribe></td>
+  <td class=item align=center>$default_group_control</td>
  </tr>\n";
   }
   print "
- <tr><td colspan=3 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
+ <tr><td colspan=4 align=right><input type=hidden name=\"save\" value=\"1\"><input type=submit value=\"Save changes\"></td></tr>
 </table>
 </form>";
-
 
 } elseif ($mode=="sent") {
   $hash=substr($_GET["message"] ?? "",0,128);

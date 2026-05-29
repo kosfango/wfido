@@ -42,7 +42,7 @@ print "
 <head>
 <title>Online FTN reader - настройки</title>
 <meta http-equiv=\"Content-Type\" content=\"text/html; charset=koi8-r\" />
-<link rel=\"stylesheet\" href=\"css/settings.css\" type=\"text/css\" media=\"all\" />
+<link rel=\"stylesheet\" href=\"css/settings.css?v=".filemtime('css/settings.css')."\" type=\"text/css\" media=\"all\" />
 </head>
 <body>
 <table border=0 width=100% height=100%>

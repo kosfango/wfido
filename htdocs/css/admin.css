@@ -31,19 +31,23 @@ td.modeselected {
 }
 
 td.item {
-  background-color: #F0F0F0;
+  background-color: #f2f3f7;
   font-style: normal;
   font-weight: bold;
   font-size: 12px;
-  border: 1px solid white;
+  border-right: 1px solid #e4e7ef;
+  border-bottom: 1px solid #e4e7ef;
+  box-shadow: inset -1px 0 0 #eaedf4, inset 0 -1px 0 #eaedf4;
 }
 
 td.header {
-  background-color: #CCCCCC;
+  background-color: #d6d8e0;
   font-style: normal;
   font-weight: bold;
   font-size: 12px;
-  border: 1px solid white;
+  border-right: 1px solid #d6dbe7;
+  border-bottom: 1px solid #d6dbe7;
+  box-shadow: inset -1px 0 0 #e0e4ed, inset 0 -1px 0 #e0e4ed;
 }
 
 td.planka {
@@ -141,4 +145,8 @@ pre.message {
   margin-right: 0px;
   margin-bottom: 0px;
   margin-left: 0px;
+}
+
+tr:nth-child(even) td.item {
+  background-color: #f0f3f8;
 }

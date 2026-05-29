@@ -3,6 +3,26 @@ function connect_to_sql($sql_host,$sql_base,$sql_user,$sql_pass){
       global $link;
       $link = mysqli_connect($sql_host, $sql_user, $sql_pass, $sql_base) or die();
       $query=mysqli_query($link, "set names koi8r");
+      assign_default_group_to_ungrouped_areas();
+}
+
+function get_default_group_id(){
+      global $link;
+      $result=mysqli_query($link, "select `value` from `default` where `key`='default_group' limit 1");
+      if (!$result || !mysqli_num_rows($result)) {
+          return 0;
+      }
+      $row=mysqli_fetch_object($result);
+      return (int)($row->value ?? 0);
+}
+
+function assign_default_group_to_ungrouped_areas(){
+      global $link;
+      $default_group_id=get_default_group_id();
+      if (!$default_group_id) {
+          return;
+      }
+      mysqli_query($link, "replace into `area_groups` (`area`, `group`) select areas.area, '$default_group_id' from `areas` left join `area_groups` on areas.area=area_groups.area where area_groups.area is null");
 }
 
 //Заэкранировать все спецсимволы в массиве
