@@ -13,6 +13,10 @@ $point=check_session($_COOKIE['SESSION'] ?? '');
 $area=substr($_GET["area"] ?? "",0,128);
 $page=substr($_GET["page"] ?? "",0,128);
 $string=substr($_GET["string"] ?? "",0,256);
+$sort=substr($_GET["sort"] ?? "",0,32);
+if ($sort!="relevance" and $sort!="mixed") {
+  $sort="newest";
+}
 
 
 if(!$page) {
@@ -70,6 +74,23 @@ while ($row=mysqli_fetch_object($result)) {
 }
 
 print "</select>
+<select name=sort>\n";
+
+if ($sort=="relevance"){
+  print "<option value='newest'>Newest first\n";
+  print "<option value='relevance' selected>Best match\n";
+  print "<option value='mixed'>Best match + newest\n";
+} elseif ($sort=="mixed") {
+  print "<option value='newest'>Newest first\n";
+  print "<option value='relevance'>Best match\n";
+  print "<option value='mixed' selected>Best match + newest\n";
+} else {
+  print "<option value='newest' selected>Newest first\n";
+  print "<option value='relevance'>Best match\n";
+  print "<option value='mixed'>Best match + newest\n";
+}
+
+print "</select>
 </form>\n";
 
 
@@ -77,32 +98,26 @@ if ($string){
 
   $search=new SphinxClient();
   $search->SetServer( $sphinx_host, $sphinx_port );
-  $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
-//  $search->SetSortMode( SPH_SORT_TIME_SEGMENTS, 'msg' );
+  $search->SetFieldWeights(array('subject' => 20, 'text' => 5));
+  if ($sort=="relevance") {
+    $search->SetSortMode( SPH_SORT_EXTENDED, '@weight DESC' );
+  } elseif ($sort=="mixed") {
+    $search->SetSortMode( SPH_SORT_EXTENDED, '@weight DESC, msg DESC' );
+  } else {
+    $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
+  }
   if ($area) {
-    $query = mysqli_query($link, "select CRC32('".strtoupper($area)."') as area32");
-    $area32=mysqli_fetch_object($query)->area32;
-    $search->SetFilter('area32',array($area32));
+    $area32=sprintf('%u', crc32(strtoupper($area)));
+    $search->SetFilter('area32',array((int)$area32));
   }
   $offset=($page-1)*$result_on_page;
-  $max_matches=$offset+$result_on_page;
+  $max_matches=max($offset+$result_on_page, 1000);
   $search->SetLimits($offset,$result_on_page,$max_matches);
 
-  $words= preg_split("/[\s,]+/",$string);
-  $search_string="@text ";
-  foreach ($words as $word){
-    if ($word[0]=="Н" or $word[0]=='н'){
-      $Hword=$word;
-      $Hword[0]="h";
-      $search_string .= " ( $word | $Hword ) ";
-    } else {
-      $search_string .= " $word ";
-    }
-  }
-
+  $search_string=build_sphinx_search_string($string);
   $result = $search->Query( mb_convert_encoding($search_string, 'UTF-8', 'KOI8-R'), "messages delta");
   if ( !empty($result["matches"]) ) { 
-    print "Найдено ".$result['total_found']." результатов<br>\n";
+    print "Найдено ".$result['total_found']." совпадений<br>\n";
     $pages=(integer)($result['total_found']/$result_on_page);
     if($result['total_found']%$result_on_page){
       $pages++;
@@ -116,16 +131,21 @@ if ($string){
 	  $print_separator=0;
 	}
         if ($i==$page) {$pages_line= $pages_line."<b>";}
-        $pages_line= $pages_line."<a href='search.php?string=$string&area=$area&page=$i'>$i</a> ";
+        $pages_line= $pages_line."<a href='search.php?string=$string&area=$area&sort=$sort&page=$i'>$i</a> ";
         if ($i==$page) {$pages_line= $pages_line. "</b>";}
       } else {
         $print_separator=1;
       }
     }
     print "$pages_line<br>\n<div style='width: 100%; text-align: left;'>\n";
-    foreach ( $result["matches"] as $id => $info ) {
-      $row=get_info_by_id($id);
-        if (!$row->subject){
+    $ids=array_keys($result["matches"]);
+    $rows=get_info_by_ids($ids);
+    foreach ($ids as $id) {
+      if (empty($rows[$id])) {
+        continue;
+      }
+      $row=$rows[$id];
+      if (!$row->subject){
         $row->subject="(no subject)";
       }
       print "$row->fromname: <a href='index.php?area=$row->area&message=$row->hash'>$row->subject</a><br>\n$row->date, $row->area<br><br>\n";
@@ -133,7 +153,7 @@ if ($string){
     print "</div><br>\n$pages_line";
 
   } else {
-      print "К сожалению, поиск не дал результатов. Имейте в виду, что слова из 3х и менее букв игнорируются при поиске.";
+      print "К сожалению, ничего не найдено. Имейте в виду, что слова по 3м и менее буквам не индексируются для поиска.";
   }
 }
 
@@ -153,8 +173,38 @@ alert (\"".stop_timer()."\");
 ";
 
 
+function build_sphinx_search_string($string){
+$words= preg_split("/[[:space:]]+/", trim($string));
+$search_string="@(subject,text) ";
+foreach ($words as $word){
+  if (!$word){
+    continue;
+  }
+  $search_string .= " $word ";
+}
+return $search_string;
+}
+
+function get_info_by_ids($ids){
+global $link;
+  if (!$ids){
+    return array();
+  }
+  $ids=array_map('intval',$ids);
+  $ids=array_filter($ids);
+  if (!$ids){
+    return array();
+  }
+  $result=mysqli_query($link, "select id,date,hash,fromname,area,subject from `messages` where id in (".implode(",", $ids).")");
+  $rows=array();
+  while ($row=mysqli_fetch_object($result)){
+    $rows[$row->id]=$row;
+  }
+  return $rows;
+}
+
 function print_filtred_message($text,$string){
-// вот тут надо подумать над тем, как выдавать превью найденных писем.
+// preview helper placeholder
 return "test";
 }
 
