@@ -695,7 +695,7 @@ To: <input type=text name=toname value=\"All\">";
       }
 			print "</td></tr>
 </table>\n";
-			if ($area!="OUTBOX"){
+			if ($area!="OUTBOX" and $area!="FAVORITES"){
 				if ($mode=="delete") {
 					$status_text="Your message was removed!";
 				}
