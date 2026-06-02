@@ -175,6 +175,9 @@ alert (\"".stop_timer()."\");
 
 function build_sphinx_search_string($string){
 $words= preg_split("/[[:space:]]+/", trim($string));
+if (!is_array($words)) {
+  $words=array(trim($string));
+}
 $search_string="@(subject,text) ";
 foreach ($words as $word){
   if (!$word){
