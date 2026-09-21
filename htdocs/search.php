@@ -100,9 +100,9 @@ if ($string){
   $search->SetServer( $sphinx_host, $sphinx_port );
   $search->SetFieldWeights(array('subject' => 20, 'text' => 5));
   if ($sort=="relevance") {
-    $search->SetSortMode( SPH_SORT_EXTENDED, '@weight DESC' );
+    $search->SetSortMode( SPH_SORT_RELEVANCE );
   } elseif ($sort=="mixed") {
-    $search->SetSortMode( SPH_SORT_EXTENDED, '@weight DESC, msg DESC' );
+    $search->SetSortMode( SPH_SORT_RELEVANCE );
   } else {
     $search->SetSortMode( SPH_SORT_ATTR_DESC, 'msg' );
   }
